@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate schema/manifest.schema.json from the compiled proto descriptors.
+"""Generate manifest.schema.json (repo root) from the compiled proto descriptors.
 
 Calls into `manifest_json.schema.generate_json_schema()` and writes the
 result deterministically. CI runs this and then `git diff --exit-code` so
@@ -17,7 +17,7 @@ sys.path.insert(0, str(REPO / "src"))
 
 from manifest_json.schema import generate_json_schema  # noqa: E402
 
-OUT = REPO / "schema" / "manifest.schema.json"
+OUT = REPO / "manifest.schema.json"
 
 
 def main() -> int:

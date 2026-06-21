@@ -103,10 +103,10 @@ def generate_json_schema() -> dict[str, Any]:
 
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": "https://github.com/zackees/manifest.json/schema/manifest.schema.json",
+        "$id": "https://github.com/zackees/manifest.json/blob/main/manifest.schema.json",
         "title": "manifest.v1",
         "description": (
-            "Unified manifest.json schema. Generated from proto/manifest.proto. "
+            "Unified manifest.json schema. Generated from manifest.proto. "
             "Do not edit by hand."
         ),
         "$defs": defs,

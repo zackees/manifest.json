@@ -142,7 +142,7 @@ extra tooling.
 
 ## 4. Schema reference
 
-The full proto lives at `proto/manifest.proto`. Below is a tour of the
+The full proto lives at `manifest.proto` (repo root). Below is a tour of the
 message types, grouped by tier.
 
 ### 4.1 Shared primitives

@@ -47,9 +47,9 @@ def test_schema_validates_with_meta() -> None:
 def test_committed_schema_matches_generated(repo_root: Path) -> None:
     """ci/gen_schema.py output must match the committed file (drift check
     enforced at CI time; this is the unit-test equivalent)."""
-    committed_path = repo_root / "schema" / "manifest.schema.json"
+    committed_path = repo_root / "manifest.schema.json"
     if not committed_path.exists():
-        pytest.skip("schema/manifest.schema.json not yet generated")
+        pytest.skip("manifest.schema.json not yet generated")
     committed = json.loads(committed_path.read_text(encoding="utf-8"))
     generated = generate_json_schema()
     assert generated == committed, (

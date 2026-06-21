@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile proto/manifest.proto -> src/manifest_json/proto/manifest_pb2.py.
+"""Compile manifest.proto -> src/manifest_json/proto/manifest_pb2.py.
 
 Uses grpcio-tools' bundled protoc so this works cross-platform without an
 external `protoc` binary on PATH.
@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-PROTO_SRC = REPO / "proto" / "manifest.proto"
+PROTO_SRC = REPO / "manifest.proto"
 OUT_DIR = REPO / "src" / "manifest_json" / "proto"
 
 

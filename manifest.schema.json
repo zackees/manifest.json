@@ -337,9 +337,9 @@
       "type": "object"
     }
   },
-  "$id": "https://github.com/zackees/manifest.json/schema/manifest.schema.json",
+  "$id": "https://github.com/zackees/manifest.json/blob/main/manifest.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Unified manifest.json schema. Generated from proto/manifest.proto. Do not edit by hand.",
+  "description": "Unified manifest.json schema. Generated from manifest.proto. Do not edit by hand.",
   "oneOf": [
     {
       "allOf": [
