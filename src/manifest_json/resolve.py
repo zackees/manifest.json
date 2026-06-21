@@ -5,7 +5,8 @@ resolve(tool, platform, channel, variant?) -> Asset
 
 from __future__ import annotations
 
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Literal
 
 
 class ResolveError(Exception):
@@ -32,6 +33,10 @@ class NoMatchingAssetError(ResolveError):
     """No (platform, variant) entry in the release matches the query."""
 
 
+class NoBinaryOrSourceError(ResolveError):
+    """No matching binary AND no source fallback available."""
+
+
 class AmbiguityError(ResolveError):
     """Multiple (platform, variant) entries matched; caller must narrow."""
 
@@ -40,6 +45,20 @@ class AmbiguityError(ResolveError):
             f"{len(candidates)} candidates matched; narrow the query"
         )
         self.candidates = candidates
+
+
+@dataclass
+class Resolution:
+    """Tagged result of resolve_or_source.
+
+    `kind == "binary"`: `asset` holds a matching prebuilt Asset.
+    `kind == "source"`: `source` holds the Release's Source fallback.
+    """
+
+    kind: Literal["binary", "source"]
+    asset: dict[str, Any] | None = None
+    source: dict[str, Any] | None = None
+    version: str = ""
 
 
 def platform_matches(stored: dict[str, Any], query: dict[str, Any]) -> bool:
@@ -146,3 +165,57 @@ def resolve_in_catalog(
         raise AmbiguityError(matches)
 
     return matches[0]["asset"]
+
+
+def resolve_or_source(
+    catalog: dict[str, Any],
+    tool: str,
+    platform: dict[str, Any],
+    channel: str,
+    variant: dict[str, Any] | None = None,
+) -> Resolution:
+    """Like resolve_in_catalog, but falls back to the Release's `source`
+    field when no binary matches. Returns a Resolution tagged with
+    `kind="binary"` or `kind="source"`.
+
+    Raises NoBinaryOrSourceError when neither is available. All other
+    ResolveError subclasses (SchemaError, ChannelNotFoundError,
+    AmbiguityError, ...) propagate unchanged — falling back to source
+    on ambiguity would mask a producer bug.
+    """
+    if catalog.get("kind") != "Catalog":
+        raise SchemaError(f"expected kind=Catalog, got {catalog.get('kind')!r}")
+    if catalog.get("tool") != tool:
+        raise SchemaError(
+            f"catalog is for tool {catalog.get('tool')!r}, queried {tool!r}"
+        )
+
+    channels = catalog.get("channels", {})
+    if channel not in channels:
+        raise ChannelNotFoundError(
+            f"channel {channel!r} not in catalog (have: {sorted(channels)})"
+        )
+    version = channels[channel]
+
+    release = None
+    for r in catalog.get("releases", []):
+        if r.get("version") == version:
+            release = r
+            break
+    if release is None:
+        raise VersionNotInCatalogError(
+            f"channel {channel!r} -> version {version!r}, but not in releases[]"
+        )
+
+    try:
+        asset = resolve_in_catalog(catalog, tool, platform, channel, variant)
+    except NoMatchingAssetError:
+        source = release.get("source") or {}
+        if not source:
+            raise NoBinaryOrSourceError(
+                f"no binary in release {version!r} matches "
+                f"platform={platform!r} variant={variant!r}, "
+                f"and no source fallback is declared"
+            ) from None
+        return Resolution(kind="source", source=source, version=version)
+    return Resolution(kind="binary", asset=asset, version=version)

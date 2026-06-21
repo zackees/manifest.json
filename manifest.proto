@@ -119,6 +119,34 @@ message Release {
   uint32 min_client_version          = 7; // gates older embedded readers
   repeated ReleasePlatform platforms = 8;
   repeated Component components      = 9;
+  Source source                      = 10; // canonical source; fallback when no binary matches
+}
+
+// Canonical source location for a Release. Optional sibling of `platforms[]`.
+// When set, callers that fail to find a matching binary can fall back to
+// building from source. This is NOT a build recipe — `build_command` is
+// just a hint pointer.
+message Source {
+  // VCS-tracked source.
+  string vcs                = 1; // "git" | "hg" | "svn" | ""
+  string repo_url           = 2; // e.g. "https://github.com/zackees/soldr"
+  string ref                = 3; // git tag / commit (e.g. "v1.4.2")
+
+  // Pre-packaged archive (e.g. GitHub's auto-generated v1.4.2.tar.gz).
+  string archive_url        = 4;
+  string archive_sha256     = 5;
+  uint64 archive_size_bytes = 6;
+
+  // Build hint — free-form. NOT a recipe; just a pointer.
+  // e.g. "cargo build --release" or a path to BUILDING.md
+  string build_command      = 7;
+
+  // Optional: platforms this source is known to build for. Empty means
+  // "no claim either way" — the caller tries and finds out.
+  repeated Platform supported_platforms = 8;
+
+  // Optional detached signatures over `archive_url`.
+  repeated Signature signatures = 9;
 }
 
 message ReleasePlatform {

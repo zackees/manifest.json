@@ -267,6 +267,9 @@
           "minimum": 0,
           "type": "integer"
         },
+        "source": {
+          "$ref": "#/$defs/Source"
+        },
         "tool": {
           "type": "string"
         },
@@ -304,6 +307,46 @@
           "type": "string"
         },
         "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "archive_sha256": {
+          "type": "string"
+        },
+        "archive_size_bytes": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "archive_url": {
+          "type": "string"
+        },
+        "build_command": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string"
+        },
+        "repo_url": {
+          "type": "string"
+        },
+        "signatures": {
+          "items": {
+            "$ref": "#/$defs/Signature"
+          },
+          "type": "array"
+        },
+        "supported_platforms": {
+          "items": {
+            "$ref": "#/$defs/Platform"
+          },
+          "type": "array"
+        },
+        "vcs": {
           "type": "string"
         }
       },

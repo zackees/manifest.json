@@ -6,6 +6,15 @@
   "published_at": "2026-06-15T18:00:00Z",
   "urgency": "medium",
   "min_client_version": 1,
+  "source": {
+    "vcs": "git",
+    "repo_url": "https://github.com/zackees/soldr",
+    "ref": "v1.4.2",
+    "archive_url": "https://github.com/zackees/soldr/archive/refs/tags/v1.4.2.tar.gz",
+    "archive_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+    "archive_size_bytes": 2400000,
+    "build_command": "cargo build --release"
+  },
   "platforms": [
     {
       "platform": { "os": "linux", "arch": "x86_64", "libc": "glibc" },

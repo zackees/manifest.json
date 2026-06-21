@@ -3,13 +3,16 @@
 from manifest_json.resolve import (
     AmbiguityError,
     ChannelNotFoundError,
+    NoBinaryOrSourceError,
     NoMatchingAssetError,
+    Resolution,
     ResolveError,
     SchemaError,
     ToolNotFoundError,
     VersionNotInCatalogError,
     platform_matches,
     resolve_in_catalog,
+    resolve_or_source,
     variant_matches,
 )
 from manifest_json.compile import compile_for_target
@@ -23,7 +26,9 @@ from manifest_json.validate import (
 __all__ = [
     "AmbiguityError",
     "ChannelNotFoundError",
+    "NoBinaryOrSourceError",
     "NoMatchingAssetError",
+    "Resolution",
     "ResolveError",
     "SchemaError",
     "ToolNotFoundError",
@@ -33,6 +38,7 @@ __all__ = [
     "generate_json_schema",
     "platform_matches",
     "resolve_in_catalog",
+    "resolve_or_source",
     "validate_catalog_semantics",
     "validate_document",
     "variant_matches",

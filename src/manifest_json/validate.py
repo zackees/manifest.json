@@ -52,6 +52,9 @@ def validate_catalog_semantics(catalog: dict[str, Any]) -> None:
             )
 
     for release in catalog.get("releases", []):
+        _validate_source(
+            release.get("source") or {}, where=f"release {release.get('version')!r}"
+        )
         seen = set()
         for rp in release.get("platforms", []):
             key = (
@@ -89,6 +92,18 @@ def _validate_index_semantics(doc: dict[str, Any]) -> None:
         _check_sha256(desc.get("sha256", ""), where=f"tool {tool_name!r} descriptor")
 
 
+def _validate_source(source: dict[str, Any], where: str) -> None:
+    if not source:
+        return
+    has_vcs = bool(source.get("repo_url")) and bool(source.get("ref"))
+    has_archive = bool(source.get("archive_url"))
+    if not has_vcs and not has_archive:
+        raise ValidationError(
+            f"{where}: Source must declare either (repo_url + ref) or archive_url"
+        )
+    _check_sha256(source.get("archive_sha256", ""), where=f"{where} archive_sha256")
+
+
 def _validate_release_semantics(release: dict[str, Any]) -> None:
     if not release.get("schema_version"):
         raise ValidationError("Release: `schema_version` is required and >0")
@@ -96,6 +111,7 @@ def _validate_release_semantics(release: dict[str, Any]) -> None:
         raise ValidationError("Release: `tool` is required and non-empty")
     if not release.get("version"):
         raise ValidationError("Release: `version` is required and non-empty")
+    _validate_source(release.get("source") or {}, where=f"release {release.get('version')!r}")
     seen = set()
     for rp in release.get("platforms", []):
         key = (

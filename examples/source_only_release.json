@@ -1,0 +1,31 @@
+{
+  "kind": "Release",
+  "schema_version": 1,
+  "tool": "exotic-tool",
+  "version": "0.3.0",
+  "published_at": "2026-06-01T12:00:00Z",
+  "urgency": "low",
+  "min_client_version": 1,
+  "source": {
+    "vcs": "git",
+    "repo_url": "https://github.com/example/exotic-tool",
+    "ref": "v0.3.0",
+    "archive_url": "https://github.com/example/exotic-tool/archive/refs/tags/v0.3.0.tar.gz",
+    "archive_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "archive_size_bytes": 145000,
+    "build_command": "make install PREFIX=/usr/local",
+    "supported_platforms": [
+      { "os": "linux" },
+      { "os": "darwin" },
+      { "os": "freebsd" }
+    ],
+    "signatures": [
+      {
+        "type": "minisign",
+        "url": "https://github.com/example/exotic-tool/releases/download/v0.3.0/v0.3.0.tar.gz.minisig",
+        "key_hint": "RWS..."
+      }
+    ]
+  },
+  "platforms": []
+}

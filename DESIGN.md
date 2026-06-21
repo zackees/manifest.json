@@ -218,12 +218,28 @@ message Catalog {
 
 ```proto
 message Release {
-  string version            = 1;
-  string published_at       = 2;     // RFC 3339
-  string urgency            = 3;     // low | medium | high | critical (AppStream)
-  uint32 min_client_version = 4;     // gates older embedded readers
-  repeated ReleasePlatform platforms = 5;
-  repeated Component components = 6; // optional component bundles
+  string kind                        = 1; // "Release" when standalone
+  uint32 schema_version              = 2;
+  string tool                        = 3;
+  string version                     = 4;
+  string published_at                = 5;     // RFC 3339
+  string urgency                     = 6;     // low | medium | high | critical (AppStream)
+  uint32 min_client_version          = 7;     // gates older embedded readers
+  repeated ReleasePlatform platforms = 8;
+  repeated Component components      = 9; // optional component bundles
+  Source source                      = 10;    // canonical source; fallback when no binary matches
+}
+
+message Source {
+  string vcs                = 1;     // git | hg | svn | ""
+  string repo_url           = 2;
+  string ref                = 3;     // git tag / commit
+  string archive_url        = 4;     // pre-packaged source tarball (e.g. GitHub auto-generated)
+  string archive_sha256     = 5;
+  uint64 archive_size_bytes = 6;
+  string build_command      = 7;     // free-form hint, NOT a recipe
+  repeated Platform supported_platforms = 8;  // informational; empty = "no claim either way"
+  repeated Signature signatures = 9;
 }
 
 message ReleasePlatform {
@@ -299,7 +315,31 @@ message CompiledFor {
    if len(matches) >  1: raise AmbiguityError(matches)
 ```
 
-### 5.3 Matching semantics
+### 5.3 Source fallback — `resolve_or_source`
+
+When a resolver needs binary-or-source-fallback semantics (DESIGN.md §3.1
+goal: "no binary for this platform → build from source"), it uses
+`resolve_or_source` instead of `resolve_in_catalog`:
+
+```
+1. Try resolve_in_catalog(...). If it returns an Asset, return
+   Resolution(kind="binary", asset=...).
+2. If it raised NoMatchingAssetError AND release.source is present,
+   return Resolution(kind="source", source=...).
+3. If release.source is absent, raise NoBinaryOrSourceError.
+4. Other resolver errors (ChannelNotFound, Ambiguity, ...) propagate
+   unchanged — falling back to source on Ambiguity would mask a
+   producer bug.
+```
+
+Source is modeled after PyPI's sdist + wheels: source is the
+authoritative-and-typically-present thing, binaries are per-platform
+optimizations. A consumer that can't run the prebuilt binary (no glibc
+compat, exotic arch, security policy that forbids prebuilts) gets a
+deterministic discovery path instead of scraping the GitHub Releases
+page.
+
+### 5.4 Matching semantics
 
 `platform_matches(stored, query)`:
 
@@ -313,7 +353,7 @@ Same rule for variants.
 can decide. (E.g. "I asked for `(linux, x86_64)` and got both `glibc` and
 `musl` builds — pick one and re-resolve with `libc` specified.")
 
-### 5.4 Caching and verification
+### 5.5 Caching and verification
 
 - `Descriptor.sha256` MUST be verified on every fetch of a sub-manifest or
   asset.
