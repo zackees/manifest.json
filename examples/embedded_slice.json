@@ -1,0 +1,22 @@
+{
+  "kind": "EmbeddedSlice",
+  "schema_version": 1,
+  "tool": "clang",
+  "compiled_for": {
+    "platform": { "os": "linux", "arch": "x86_64", "libc": "glibc" },
+    "channel": "latest-stable"
+  },
+  "compiled_version": "21.1.5",
+  "asset": {
+    "filename": "llvm-21.1.5-linux-x86_64.tar.zst",
+    "media_type": "application/zstd",
+    "size_bytes": 98921700,
+    "sha256": "4021cc49d70472122761709e7376835dfc857b5ec77183fa969b5f61d0f13a2f",
+    "urls": [
+      "https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang/linux/x86_64/llvm-21.1.5-linux-x86_64.tar.zst"
+    ]
+  },
+  "signing_pubkey": "ed25519:abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+  "online_url": "https://raw.githubusercontent.com/zackees/clang-tool-chain-bins/main/assets/clang/manifest.json",
+  "online_sha256": "a7e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3"
+}

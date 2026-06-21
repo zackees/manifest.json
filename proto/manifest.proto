@@ -1,0 +1,158 @@
+// Canonical schema for the unified manifest.json format.
+//
+// See DESIGN.md for rationale and the full schema reference. JSON is the
+// wire format; this proto file is the source of truth for field numbers,
+// types, and forward-compat rules.
+//
+// JSON projection conventions (DESIGN.md §3.5):
+//   - field names are snake_case (no implicit camelCase)
+//   - enums project to lowercase strings
+//   - fields equal to their proto3 default value MAY be omitted
+
+syntax = "proto3";
+
+package manifest.v1;
+
+// ---------------------------------------------------------------------------
+// Shared primitives
+// ---------------------------------------------------------------------------
+
+// Orthogonal platform tuple. Two Platform values are equal iff every field
+// present in BOTH has the same value. A field present in only one acts as a
+// wildcard during resolution (see DESIGN.md §5.3).
+message Platform {
+  string os                = 1; // linux | darwin | windows | freebsd | wasi | ...
+  string arch              = 2; // x86_64 | aarch64 | armv7 | riscv64 | wasm32 | ...
+  string os_version        = 3; // minimum OS version (e.g. "11.0")
+  string libc              = 4; // glibc | musl | msvc | mingw
+  string abi               = 5; // gnu | gnullvm | eabihf
+  repeated string features = 6; // CPU feature tags: avx2, neon, sve, ...
+}
+
+// Orthogonal variant axis. Same wildcard semantics as Platform.
+message Variant {
+  string optimization = 1; // pgo+lto | size | debug | ...
+  string edition      = 2; // full | minimal | install_only | install_only_stripped
+  string flavor       = 3; // distribution-defined free-form tag
+}
+
+// Content-addressed reference to another document or binary blob.
+message Descriptor {
+  string url        = 1;
+  string sha256     = 2; // lowercase hex
+  uint64 size_bytes = 3;
+  string media_type = 4; // optional; e.g. "application/vnd.manifest.v1+json"
+}
+
+// A single downloadable artifact.
+message Asset {
+  string filename            = 1;
+  string media_type          = 2;
+  uint64 size_bytes          = 3;
+  string sha256              = 4;
+  repeated string urls       = 5; // primary first, then mirrors
+  repeated Part parts        = 6; // empty unless multi-part
+  repeated Signature signatures = 7;
+  string sbom_url            = 8;
+  string provenance_url      = 9;
+  bool   yanked              = 10;
+  string yanked_reason       = 11;
+}
+
+// One chunk of a multi-part archive.
+message Part {
+  uint32 number          = 1; // 1-indexed
+  string sha256          = 2;
+  uint64 size_bytes      = 3;
+  repeated string urls   = 4;
+}
+
+// Pointer to a detached signature.
+message Signature {
+  string type     = 1; // cosign | minisign | gpg | ssh
+  string url      = 2;
+  string key_hint = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Tier 1 — Index (federated top-level)
+// ---------------------------------------------------------------------------
+
+message Index {
+  string kind                  = 1; // "Index"
+  uint32 schema_version        = 2; // currently 1
+  map<string, ToolEntry> tools = 3;
+}
+
+message ToolEntry {
+  Descriptor descriptor = 1; // points at the per-tool Catalog
+  string     summary    = 2; // optional one-line description
+}
+
+// ---------------------------------------------------------------------------
+// Tier 2 — Catalog (per tool)
+// ---------------------------------------------------------------------------
+
+message Catalog {
+  string kind                    = 1; // "Catalog"
+  uint32 schema_version          = 2;
+  string tool                    = 3;
+  string online_url              = 4; // self-pointer (canonical URL of this doc)
+  map<string, string> channels   = 5; // channel name -> version
+  repeated Release releases      = 6; // sorted newest-first
+}
+
+// ---------------------------------------------------------------------------
+// Tier 3 — Release (per (tool, version))
+//
+// May appear standalone as the document attached to a GitHub Release, or
+// embedded inside a Catalog as one element of `releases[]`.
+// ---------------------------------------------------------------------------
+
+message Release {
+  string kind                        = 1; // "Release" when standalone; "" inside a Catalog
+  uint32 schema_version              = 2;
+  string tool                        = 3;
+  string version                     = 4;
+  string published_at                = 5; // RFC 3339
+  string urgency                     = 6; // low | medium | high | critical
+  uint32 min_client_version          = 7; // gates older embedded readers
+  repeated ReleasePlatform platforms = 8;
+  repeated Component components      = 9;
+}
+
+message ReleasePlatform {
+  Platform platform = 1;
+  Variant  variant  = 2;
+  Asset    asset    = 3;
+}
+
+message Component {
+  string   id       = 1; // "clang-extra", "sysroot", "headers", ...
+  bool     required = 2;
+  Asset    asset    = 3;
+  Platform platform = 4;
+  Variant  variant  = 5;
+}
+
+// ---------------------------------------------------------------------------
+// Tier 4 — EmbeddedSlice (compiled for one target)
+// ---------------------------------------------------------------------------
+
+message EmbeddedSlice {
+  string      kind             = 1; // "EmbeddedSlice"
+  uint32      schema_version   = 2;
+  string      tool             = 3;
+  CompiledFor compiled_for     = 4;
+  string      compiled_version = 5;
+  Asset       asset            = 6;
+  string      signing_pubkey   = 7; // optional trust anchor for asset.signatures
+  string      online_url       = 8; // back-link to canonical Catalog
+  string      online_sha256    = 9; // sha of Catalog at compile time
+}
+
+message CompiledFor {
+  Platform platform = 1;
+  Variant  variant  = 2;
+  string   channel  = 3; // the channel that resolved to compiled_version
+}

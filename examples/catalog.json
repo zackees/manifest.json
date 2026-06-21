@@ -1,0 +1,98 @@
+{
+  "kind": "Catalog",
+  "schema_version": 1,
+  "tool": "clang",
+  "online_url": "https://raw.githubusercontent.com/zackees/clang-tool-chain-bins/main/assets/clang/manifest.json",
+  "channels": {
+    "latest-stable": "21.1.5",
+    "stable":        "21.1.5",
+    "nightly":       "21.2.0-nightly+20260620",
+    "lts-21":        "21.1.5"
+  },
+  "releases": [
+    {
+      "version": "21.2.0-nightly+20260620",
+      "published_at": "2026-06-20T03:14:00Z",
+      "urgency": "low",
+      "min_client_version": 1,
+      "platforms": [
+        {
+          "platform": { "os": "linux", "arch": "x86_64", "libc": "glibc" },
+          "asset": {
+            "filename": "llvm-21.2.0-nightly+20260620-linux-x86_64.tar.zst",
+            "media_type": "application/zstd",
+            "size_bytes": 99511627,
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "urls": ["https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang/linux/x86_64/llvm-21.2.0-nightly+20260620-linux-x86_64.tar.zst"]
+          }
+        }
+      ]
+    },
+    {
+      "version": "21.1.5",
+      "published_at": "2026-05-12T00:00:00Z",
+      "urgency": "medium",
+      "min_client_version": 1,
+      "platforms": [
+        {
+          "platform": { "os": "linux", "arch": "x86_64", "libc": "glibc" },
+          "asset": {
+            "filename": "llvm-21.1.5-linux-x86_64.tar.zst",
+            "media_type": "application/zstd",
+            "size_bytes": 98921700,
+            "sha256": "4021cc49d70472122761709e7376835dfc857b5ec77183fa969b5f61d0f13a2f",
+            "urls": [
+              "https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang/linux/x86_64/llvm-21.1.5-linux-x86_64.tar.zst",
+              "https://raw.githubusercontent.com/zackees/clang-tool-chain-bins/main/assets/clang/linux/x86_64/llvm-21.1.5-linux-x86_64.tar.zst"
+            ]
+          }
+        },
+        {
+          "platform": { "os": "linux", "arch": "x86_64", "libc": "musl" },
+          "asset": {
+            "filename": "llvm-21.1.5-linux-x86_64-musl.tar.zst",
+            "size_bytes": 97001200,
+            "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "urls": ["https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang/linux/x86_64/llvm-21.1.5-linux-x86_64-musl.tar.zst"]
+          }
+        },
+        {
+          "platform": { "os": "linux", "arch": "aarch64", "libc": "glibc" },
+          "asset": {
+            "filename": "llvm-21.1.5-linux-aarch64.tar.zst",
+            "size_bytes": 95200100,
+            "sha256": "106461848a4f7029849888b034424b1c87048552e3ae5cfdbc5b3bf88d4f876c",
+            "urls": ["https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang/linux/arm64/llvm-21.1.5-linux-arm64.tar.zst"]
+          }
+        },
+        {
+          "platform": { "os": "darwin", "arch": "aarch64", "os_version": "11.0" },
+          "asset": {
+            "filename": "llvm-21.1.6-darwin-arm64.tar.zst",
+            "size_bytes": 110000000,
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "urls": ["https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang/darwin/arm64/llvm-21.1.6-darwin-arm64.tar.zst"]
+          }
+        },
+        {
+          "platform": { "os": "windows", "arch": "x86_64", "abi": "msvc" },
+          "asset": {
+            "filename": "llvm-21.1.5-win-x86_64.tar.zst",
+            "size_bytes": 105000000,
+            "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "urls": ["https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang/win/x86_64/llvm-21.1.5-win-x86_64.tar.zst"]
+          }
+        },
+        {
+          "platform": { "os": "windows", "arch": "x86_64", "abi": "gnullvm" },
+          "asset": {
+            "filename": "llvm-mingw-20251104-win-x86_64.tar.zst",
+            "size_bytes": 88000000,
+            "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "urls": ["https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang/win/mingw/x86_64/llvm-mingw-20251104-win-x86_64.tar.zst"]
+          }
+        }
+      ]
+    }
+  ]
+}

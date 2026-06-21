@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package + dev deps
+        run: python -m pip install -e ".[dev]"
+
+      - name: Generate proto bindings
+        run: python ci/gen_proto.py
+
+      - name: Generate JSON Schema
+        run: python ci/gen_schema.py
+
+      - name: Check no drift in committed generated files
+        run: python ci/check_drift.py
+
+      - name: Validate every example manifest
+        run: python ci/validate_examples.py
+
+      - name: Run pytest
+        run: python ci/test.py

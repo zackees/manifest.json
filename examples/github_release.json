@@ -1,0 +1,57 @@
+{
+  "kind": "Release",
+  "schema_version": 1,
+  "tool": "soldr",
+  "version": "1.4.2",
+  "published_at": "2026-06-15T18:00:00Z",
+  "urgency": "medium",
+  "min_client_version": 1,
+  "platforms": [
+    {
+      "platform": { "os": "linux", "arch": "x86_64", "libc": "glibc" },
+      "asset": {
+        "filename": "soldr-1.4.2-linux-x86_64.tar.zst",
+        "media_type": "application/zstd",
+        "size_bytes": 14223101,
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "urls": ["https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-linux-x86_64.tar.zst"],
+        "signatures": [
+          {
+            "type": "cosign",
+            "url": "https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-linux-x86_64.tar.zst.sig"
+          }
+        ],
+        "sbom_url": "https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2.spdx.json",
+        "provenance_url": "https://github.com/zackees/soldr/attestations/12345"
+      }
+    },
+    {
+      "platform": { "os": "linux", "arch": "x86_64", "libc": "musl" },
+      "asset": {
+        "filename": "soldr-1.4.2-linux-x86_64-musl.tar.zst",
+        "size_bytes": 13884221,
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "urls": ["https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-linux-x86_64-musl.tar.zst"]
+      }
+    },
+    {
+      "platform": { "os": "darwin", "arch": "aarch64", "os_version": "11.0" },
+      "asset": {
+        "filename": "soldr-1.4.2-darwin-aarch64.tar.zst",
+        "size_bytes": 15102003,
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "urls": ["https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-darwin-aarch64.tar.zst"]
+      }
+    },
+    {
+      "platform": { "os": "windows", "arch": "x86_64", "abi": "msvc" },
+      "asset": {
+        "filename": "soldr-1.4.2-windows-x86_64.zip",
+        "media_type": "application/zip",
+        "size_bytes": 16441002,
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "urls": ["https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-windows-x86_64.zip"]
+      }
+    }
+  ]
+}

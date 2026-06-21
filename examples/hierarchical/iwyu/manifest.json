@@ -1,0 +1,28 @@
+{
+  "kind": "Catalog",
+  "schema_version": 1,
+  "tool": "iwyu",
+  "online_url": "https://example.invalid/hierarchical/iwyu/manifest.json",
+  "channels": {
+    "latest-stable": "0.25"
+  },
+  "releases": [
+    {
+      "version": "0.25",
+      "published_at": "2026-04-01T00:00:00Z",
+      "urgency": "low",
+      "min_client_version": 1,
+      "platforms": [
+        {
+          "platform": { "os": "linux", "arch": "x86_64" },
+          "asset": {
+            "filename": "iwyu-0.25-linux-x86_64.tar.zst",
+            "size_bytes": 8400000,
+            "sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+            "urls": ["https://example.invalid/iwyu/linux/x86_64/iwyu-0.25-linux-x86_64.tar.zst"]
+          }
+        }
+      ]
+    }
+  ]
+}

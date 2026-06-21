@@ -1,0 +1,418 @@
+{
+  "$defs": {
+    "Asset": {
+      "additionalProperties": false,
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "media_type": {
+          "type": "string"
+        },
+        "parts": {
+          "items": {
+            "$ref": "#/$defs/Part"
+          },
+          "type": "array"
+        },
+        "provenance_url": {
+          "type": "string"
+        },
+        "sbom_url": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "signatures": {
+          "items": {
+            "$ref": "#/$defs/Signature"
+          },
+          "type": "array"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "urls": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "yanked": {
+          "type": "boolean"
+        },
+        "yanked_reason": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Catalog": {
+      "additionalProperties": false,
+      "properties": {
+        "channels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "online_url": {
+          "type": "string"
+        },
+        "releases": {
+          "items": {
+            "$ref": "#/$defs/Release"
+          },
+          "type": "array"
+        },
+        "schema_version": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "tool": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "CompiledFor": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "type": "string"
+        },
+        "platform": {
+          "$ref": "#/$defs/Platform"
+        },
+        "variant": {
+          "$ref": "#/$defs/Variant"
+        }
+      },
+      "type": "object"
+    },
+    "Component": {
+      "additionalProperties": false,
+      "properties": {
+        "asset": {
+          "$ref": "#/$defs/Asset"
+        },
+        "id": {
+          "type": "string"
+        },
+        "platform": {
+          "$ref": "#/$defs/Platform"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "variant": {
+          "$ref": "#/$defs/Variant"
+        }
+      },
+      "type": "object"
+    },
+    "Descriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "media_type": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "EmbeddedSlice": {
+      "additionalProperties": false,
+      "properties": {
+        "asset": {
+          "$ref": "#/$defs/Asset"
+        },
+        "compiled_for": {
+          "$ref": "#/$defs/CompiledFor"
+        },
+        "compiled_version": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "online_sha256": {
+          "type": "string"
+        },
+        "online_url": {
+          "type": "string"
+        },
+        "schema_version": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "signing_pubkey": {
+          "type": "string"
+        },
+        "tool": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Index": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "schema_version": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "tools": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ToolEntry"
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "Part": {
+      "additionalProperties": false,
+      "properties": {
+        "number": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "urls": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "Platform": {
+      "additionalProperties": false,
+      "properties": {
+        "abi": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "features": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "libc": {
+          "type": "string"
+        },
+        "os": {
+          "type": "string"
+        },
+        "os_version": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Release": {
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "items": {
+            "$ref": "#/$defs/Component"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "min_client_version": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "platforms": {
+          "items": {
+            "$ref": "#/$defs/ReleasePlatform"
+          },
+          "type": "array"
+        },
+        "published_at": {
+          "type": "string"
+        },
+        "schema_version": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "tool": {
+          "type": "string"
+        },
+        "urgency": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ReleasePlatform": {
+      "additionalProperties": false,
+      "properties": {
+        "asset": {
+          "$ref": "#/$defs/Asset"
+        },
+        "platform": {
+          "$ref": "#/$defs/Platform"
+        },
+        "variant": {
+          "$ref": "#/$defs/Variant"
+        }
+      },
+      "type": "object"
+    },
+    "Signature": {
+      "additionalProperties": false,
+      "properties": {
+        "key_hint": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ToolEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "descriptor": {
+          "$ref": "#/$defs/Descriptor"
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Variant": {
+      "additionalProperties": false,
+      "properties": {
+        "edition": {
+          "type": "string"
+        },
+        "flavor": {
+          "type": "string"
+        },
+        "optimization": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "https://github.com/zackees/manifest.json/schema/manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Unified manifest.json schema. Generated from proto/manifest.proto. Do not edit by hand.",
+  "oneOf": [
+    {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Index"
+        },
+        {
+          "properties": {
+            "kind": {
+              "const": "Index"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Catalog"
+        },
+        {
+          "properties": {
+            "kind": {
+              "const": "Catalog"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Release"
+        },
+        {
+          "properties": {
+            "kind": {
+              "const": "Release"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EmbeddedSlice"
+        },
+        {
+          "properties": {
+            "kind": {
+              "const": "EmbeddedSlice"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  ],
+  "title": "manifest.v1"
+}

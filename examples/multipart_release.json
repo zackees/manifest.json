@@ -1,0 +1,63 @@
+{
+  "kind": "Release",
+  "schema_version": 1,
+  "tool": "clang-extra",
+  "version": "21.1.5",
+  "published_at": "2026-05-12T00:00:00Z",
+  "urgency": "low",
+  "min_client_version": 1,
+  "platforms": [
+    {
+      "platform": { "os": "linux", "arch": "x86_64", "libc": "glibc" },
+      "variant": { "edition": "full" },
+      "asset": {
+        "filename": "clang-extra-21.1.5-linux-x86_64-full.tar.zst",
+        "media_type": "application/zstd",
+        "size_bytes": 4500000000,
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "urls": [],
+        "parts": [
+          {
+            "number": 1,
+            "sha256": "aaaa111111111111111111111111111111111111111111111111111111111111",
+            "size_bytes": 1500000000,
+            "urls": [
+              "https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang-extra/linux/x86_64/clang-extra-21.1.5-linux-x86_64-full.tar.zst.part01"
+            ]
+          },
+          {
+            "number": 2,
+            "sha256": "bbbb222222222222222222222222222222222222222222222222222222222222",
+            "size_bytes": 1500000000,
+            "urls": [
+              "https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang-extra/linux/x86_64/clang-extra-21.1.5-linux-x86_64-full.tar.zst.part02"
+            ]
+          },
+          {
+            "number": 3,
+            "sha256": "cccc333333333333333333333333333333333333333333333333333333333333",
+            "size_bytes": 1500000000,
+            "urls": [
+              "https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang-extra/linux/x86_64/clang-extra-21.1.5-linux-x86_64-full.tar.zst.part03"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "components": [
+    {
+      "id": "headers",
+      "required": false,
+      "platform": { "os": "linux", "arch": "x86_64", "libc": "glibc" },
+      "asset": {
+        "filename": "clang-extra-21.1.5-headers.tar.zst",
+        "size_bytes": 12000000,
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "urls": [
+          "https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang-extra/linux/x86_64/clang-extra-21.1.5-headers.tar.zst"
+        ]
+      }
+    }
+  ]
+}

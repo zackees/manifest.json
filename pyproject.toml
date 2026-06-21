@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "manifest-json"
+version = "0.1.0"
+description = "Codified manifest.json format for describing downloadable artifacts (JSON + Protocol Buffers)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "zackees" }]
+dependencies = [
+  "protobuf>=4.25",
+  "jsonschema>=4.21",
+]
+
+[project.optional-dependencies]
+dev = [
+  "grpcio-tools>=1.60",   # bundles `protoc` cross-platform
+  "pytest>=8.0",
+]
+
+[project.scripts]
+manifest-validate    = "manifest_json.cli:validate_main"
+manifest-compile     = "manifest_json.cli:compile_main"
+manifest-gen-schema  = "manifest_json.cli:gen_schema_main"
+manifest-resolve     = "manifest_json.cli:resolve_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"manifest_json" = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"

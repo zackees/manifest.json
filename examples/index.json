@@ -1,0 +1,33 @@
+{
+  "kind": "Index",
+  "schema_version": 1,
+  "tools": {
+    "clang": {
+      "descriptor": {
+        "url": "clang/manifest.json",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "size_bytes": 4321,
+        "media_type": "application/vnd.manifest.v1+json"
+      },
+      "summary": "LLVM/Clang prebuilt toolchain (linux, darwin, windows)"
+    },
+    "iwyu": {
+      "descriptor": {
+        "url": "iwyu/manifest.json",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "size_bytes": 1820,
+        "media_type": "application/vnd.manifest.v1+json"
+      },
+      "summary": "include-what-you-use 0.25"
+    },
+    "soldr": {
+      "descriptor": {
+        "url": "https://raw.githubusercontent.com/zackees/soldr/manifest/soldr/manifest.json",
+        "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "size_bytes": 2100,
+        "media_type": "application/vnd.manifest.v1+json"
+      },
+      "summary": "Rust toolchain wrapper with build caching (federated; lives in a sibling repo)"
+    }
+  }
+}

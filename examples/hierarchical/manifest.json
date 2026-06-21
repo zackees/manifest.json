@@ -1,0 +1,20 @@
+{
+  "kind": "Index",
+  "schema_version": 1,
+  "tools": {
+    "clang": {
+      "descriptor": {
+        "url": "clang/manifest.json",
+        "sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+        "size_bytes": 1024
+      }
+    },
+    "iwyu": {
+      "descriptor": {
+        "url": "iwyu/manifest.json",
+        "sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+        "size_bytes": 512
+      }
+    }
+  }
+}
