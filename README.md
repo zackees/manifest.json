@@ -153,6 +153,81 @@ Sub-manifests can live in the same repo, a sibling repo, or a different CDN
 
 ---
 
+## Validate a manifest
+
+Three options, ordered from most-complete to zero-install.
+
+### 1. CLI (recommended)
+
+```bash
+pip install git+https://github.com/zackees/manifest.json
+manifest-validate path/to/manifest.json [more.json ...]
+```
+
+```
+OK   path/to/manifest.json
+```
+
+Exits non-zero on the first failure:
+
+```
+FAIL /tmp/bad.json: channel 'stable' -> '1.0', but no release with that version
+```
+
+### 2. Python API
+
+```python
+import json
+from manifest_json import validate_document, ValidationError
+
+doc = json.load(open("manifest.json"))
+try:
+    validate_document(doc)
+except ValidationError as exc:
+    print(f"invalid: {exc}")
+```
+
+`validate_document` returns `None` on success, raises `ValidationError` on any
+structural or semantic violation. Suitable for CI scripts, pre-commit hooks,
+and build-time checks.
+
+### 3. Raw JSON Schema (any language, no Python package)
+
+`manifest.schema.json` lives at the repo root, regenerated from
+[`manifest.proto`](manifest.proto) on every commit. Feed it to any JSON Schema
+2020-12 validator:
+
+```python
+import json, jsonschema
+schema = json.load(open("manifest.schema.json"))
+doc    = json.load(open("my-manifest.json"))
+jsonschema.validate(doc, schema)
+```
+
+Same path works from JavaScript (Ajv), Go (gojsonschema), Rust (jsonschema
+crate), etc.
+
+**Caveat:** the raw schema catches only **structural** problems (field types,
+unknown fields, `kind` discriminator). It does **not** catch semantic ones —
+a Catalog whose `channels.stable` points at a version not present in
+`releases[]` will pass JSON Schema validation but fail real-world use. For
+full correctness use option 1 or 2.
+
+| Check | JSON Schema (#3) | `validate_document` (#1, #2) |
+|---|---|---|
+| Field types, unknown fields, `kind` discriminator | ✅ | ✅ |
+| Required top-level fields (`schema_version`, `tool`, ...) | ❌ | ✅ |
+| `channels[name]` resolves to a real release `version` | ❌ | ✅ |
+| `sha256` is 64-char lowercase hex | ❌ | ✅ |
+| No duplicate `(platform, variant)` in a Release | ❌ | ✅ |
+| `releases[]` sorted newest-first | ❌ | ✅ |
+| `Source` declares `(repo_url + ref)` OR `archive_url` | ❌ | ✅ |
+| `ArchiveContents.file_count` matches `len(files)` | ❌ | ✅ |
+| File paths forward-slashed, no duplicates, valid type | ❌ | ✅ |
+| symlinks/hardlinks require `linkname` | ❌ | ✅ |
+
+---
+
 ## Use cases supported
 
 | Case | How |
