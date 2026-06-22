@@ -10,7 +10,8 @@
         "size_bytes": 4321,
         "media_type": "application/vnd.manifest.v1+json"
       },
-      "summary": "LLVM/Clang prebuilt toolchain (linux, darwin, windows)"
+      "summary": "LLVM/Clang prebuilt toolchain (linux, darwin, windows)",
+      "kind_hint": "tool"
     },
     "iwyu": {
       "descriptor": {
@@ -19,7 +20,8 @@
         "size_bytes": 1820,
         "media_type": "application/vnd.manifest.v1+json"
       },
-      "summary": "include-what-you-use 0.25"
+      "summary": "include-what-you-use 0.25",
+      "kind_hint": "tool"
     },
     "soldr": {
       "descriptor": {
@@ -28,7 +30,18 @@
         "size_bytes": 2100,
         "media_type": "application/vnd.manifest.v1+json"
       },
-      "summary": "Rust toolchain wrapper with build caching (federated; lives in a sibling repo)"
+      "summary": "Rust toolchain wrapper with build caching (federated; lives in a sibling repo)",
+      "kind_hint": "tool"
+    },
+    "apple-sdk": {
+      "descriptor": {
+        "url": "apple-sdk/manifest.json",
+        "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "size_bytes": 1400,
+        "media_type": "application/vnd.manifest.v1+json"
+      },
+      "summary": "Apple macOS SDK 11.3 — cross-compile sysroot, not an invocable tool",
+      "kind_hint": "sysroot"
     }
   }
 }

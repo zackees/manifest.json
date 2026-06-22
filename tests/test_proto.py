@@ -44,6 +44,16 @@ def test_catalog_field_numbers_stable() -> None:
     }
 
 
+def test_tool_entry_field_numbers_stable() -> None:
+    te = manifest_pb2.DESCRIPTOR.message_types_by_name["ToolEntry"]
+    by_name = {f.name: f.number for f in te.fields}
+    assert by_name == {
+        "descriptor": 1,
+        "summary": 2,
+        "kind_hint": 3,
+    }
+
+
 def test_root_documents_carry_schema_field_with_dollar_json_name() -> None:
     """All five root document types expose an optional `schema` field
     that projects to `$schema` on the JSON wire."""

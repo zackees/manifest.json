@@ -105,6 +105,13 @@ message Index {
 message ToolEntry {
   Descriptor descriptor = 1; // points at the per-tool Catalog
   string     summary    = 2; // optional one-line description
+  // Free-form, producer-defined category hint. Informational only —
+  // the validator does NOT enforce a controlled vocabulary. Lets an
+  // Index distinguish an invocable binary from an SDK / sysroot /
+  // library / data bundle when a UI or installer cares. Suggested
+  // values: "tool", "sdk", "sysroot", "library", "data". Empty/missing
+  // means "no claim" — consumers fall back to the `summary` text.
+  string     kind_hint  = 3;
 }
 
 // ---------------------------------------------------------------------------

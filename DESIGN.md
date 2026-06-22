@@ -200,8 +200,16 @@ message Index {
 message ToolEntry {
   Descriptor descriptor = 1;  // points at the per-tool Catalog
   string     summary    = 2;  // optional one-line description
+  string     kind_hint  = 3;  // free-form category: "tool" | "sdk" | "sysroot" | ...
 }
 ```
+
+**`ToolEntry.kind_hint`** is a free-form, producer-defined category string.
+The validator does NOT enforce a controlled vocabulary. It lets an Index
+distinguish an invocable binary from an SDK / sysroot / library / data
+bundle when a UI or installer cares about that distinction. Suggested
+values: `"tool"`, `"sdk"`, `"sysroot"`, `"library"`, `"data"`. Empty or
+missing means "no claim" — consumers fall back to the `summary` text.
 
 ### 4.3 Tier 2 — Catalog (per tool)
 
