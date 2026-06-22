@@ -228,6 +228,111 @@ full correctness use option 1 or 2.
 
 ---
 
+## Python tooling
+
+The `manifest-json` package ships four CLIs and a small Python API. All four
+are installed by `pip install git+https://github.com/zackees/manifest.json`.
+
+### CLIs (console scripts)
+
+| Command | What it does | Example |
+|---|---|---|
+| `manifest-validate` | Validate one or more manifest files (structural + semantic). Exit 1 on first failure. | `manifest-validate path/to/manifest.json` |
+| `manifest-resolve` | Resolve `(tool, platform, channel)` → one Asset (pretty JSON). With `--all`: every match as JSON Lines, ordered most-preferred first. | `manifest-resolve catalog.json --tool zccache --platform os=linux,arch=x86_64,libc=musl --channel latest-stable` |
+| `manifest-compile` | Project a Catalog into a small `EmbeddedSlice` for one target. Output is deterministic — commit it and `include_str!` it into a binary. | `manifest-compile catalog.json --platform os=linux,arch=x86_64 --channel latest-stable -o slice.json` |
+| `manifest-gen-schema` | Emit the canonical JSON Schema (Draft 2020-12) from the compiled `.proto` descriptors. | `manifest-gen-schema -o manifest.schema.json` |
+
+### Python API
+
+| Task | Import | Notes |
+|---|---|---|
+| **Validate a document** | `from manifest_json import validate_document, ValidationError` | Raises `ValidationError` — both structural (via JSON Schema) AND semantic (channel resolution, sha256 hex, etc.). See the table above. |
+| **Resolve one asset** | `from manifest_json import resolve_in_catalog` | Returns one `Asset` dict. Raises `AmbiguityError` when the query matches more than one entry at top specificity. |
+| **Resolve every matching asset** | `from manifest_json import resolve_all_in_catalog` | Returns an ordered `list[Resolution]`. Never raises on ambiguity. Use when your query is intentionally fuzzy (e.g. `arch="x86"` against a catalog with both `x86_64` and `i686`). |
+| **Source-fallback resolve** | `from manifest_json import resolve_or_source` | Returns `Resolution(kind="binary"\|"source")`. Falls back to the Release's `source` field when no binary matches. |
+| **Compile an embedded slice** | `from manifest_json import compile_for_target` | Returns a deterministic dict. Pair with `serialize_slice()` for byte-stable output. |
+| **Generate the JSON Schema** | `from manifest_json import generate_json_schema` | Returns a Draft-2020-12 dict. Walks the compiled proto descriptors. |
+| **Normalize a caller's platform tuple** | `from manifest_json.resolve import normalize_platform` | Maps caller-side aliases (`x64`/`amd64`/`mac`/`win`) to canonical values (`x86_64`/`darwin`/`windows`). |
+| **Flatten a platform for filesystem paths** | `from manifest_json import flatten_platform` | `{os:darwin, arch:universal2}` → `"darwin-universal2"`. Use when laying out vendored binaries on disk. |
+
+### Quick recipes
+
+**Fetch a catalog and resolve for the current host:**
+
+```python
+import json, platform, urllib.request
+from manifest_json import resolve_in_catalog
+
+url = "https://zackees.github.io/soldr-toolchain/zccache/manifest.json"
+cat = json.loads(urllib.request.urlopen(url).read())
+
+asset = resolve_in_catalog(
+    cat, "zccache",
+    platform={"os": platform.system().lower(),
+              "arch": platform.machine().lower(),
+              "libc": "musl"},
+    channel="latest-stable",
+)
+print(asset["urls"][0])     # the download URL
+print(asset["sha256"])      # for integrity check after download
+```
+
+**List every match for an ambiguous query (JSON Lines for shell pipelines):**
+
+```bash
+manifest-resolve catalog.json \
+  --tool exotic --platform os=linux,arch=x86 --channel latest-stable --all \
+  | jq -r '.urls[0]'
+```
+
+**Compile a slice for embedding in a Rust binary:**
+
+```bash
+manifest-compile catalog.json \
+  --platform os=linux,arch=x86_64,libc=glibc \
+  --channel latest-stable \
+  -o src/embedded_slice.json
+# Then in Rust: const SLICE: &str = include_str!("embedded_slice.json");
+```
+
+### External tools worth knowing about
+
+Some tasks have a better-suited tool than rolling our own. We recommend
+these alongside the `manifest-json` package:
+
+| Tool | Use it for | Why over our CLIs |
+|---|---|---|
+| **`check-jsonschema`** ([pypi](https://pypi.org/project/check-jsonschema/)) | Pre-commit hook + IDE integration | Auto-resolves the `$schema` URL on the document; richer error messages with json-path context; first-class `pre-commit` framework support. `pip install check-jsonschema && check-jsonschema path/to/manifest.json` works because every example carries `$schema`. Catches structural issues only — pair with `manifest-validate` for semantic. |
+| **`jq`** (any package manager) | Ad-hoc shell-side catalog queries | Faster than spinning up Python for one-off lookups. `curl -s URL \| jq '.channels'` is muscle memory for ops. |
+| **`grpcio-tools`** ([pypi](https://pypi.org/project/grpcio-tools/)) | Regenerating Python proto bindings | Bundles `protoc` cross-platform — no separate binary install. Already used by `ci/gen_proto.py`. |
+| **`buf`** ([buf.build](https://buf.build/docs)) | Editing the `.proto` itself (lint, breaking-change detection) | Modern proto tooling; `buf lint` catches schema mistakes our build doesn't. |
+| **VS Code JSON IntelliSense** (built-in) | Authoring manifests by hand | Detects `"$schema": "..."` and turns on auto-completion + inline validation. Zero config — works because our docs carry `$schema` pointing at the [published schema](https://zackees.github.io/manifest.json/v1/manifest.schema.json). |
+| **Ajv CLI** ([ajv.js.org](https://ajv.js.org/packages/ajv-cli.html)) | Validation in Node.js / JS toolchains | Fastest JSON Schema validator on the planet. Same `manifest.schema.json` works as input. |
+| **`gojsonschema`** ([Go](https://github.com/xeipuuv/gojsonschema)) | Validation in Go toolchains | Same schema URL; no Python needed. |
+
+### When to use what
+
+```
+   ┌──────────────────────────────────────────────────────────┐
+   │ I want to...                                             │
+   ├──────────────────────────────────────────────────────────┤
+   │ ...check a manifest is conformant     -> manifest-validate (semantic)
+   │                                       or check-jsonschema (structural,
+   │                                          pre-commit-friendly)
+   │ ...find the asset for my host         -> manifest-resolve
+   │ ...see ALL matches for a fuzzy query  -> manifest-resolve --all
+   │ ...embed a tiny per-target slice      -> manifest-compile
+   │ ...write the canonical schema to disk -> manifest-gen-schema
+   │ ...inspect a catalog from a shell     -> curl ... | jq
+   │ ...regenerate proto bindings          -> grpcio-tools (via ci/gen_proto.py)
+   │ ...lint / breaking-change the proto   -> buf lint / buf breaking
+   │ ...validate from another language     -> Ajv (JS), gojsonschema (Go),
+   │                                          jsonschema crate (Rust)
+   └──────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Use cases supported
 
 | Case | How |
