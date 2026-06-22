@@ -374,6 +374,17 @@ bare `{os, arch}` fallback alongside explicit `libc:musl` / `abi:msvc`
 variants without the bare entry shadow-matching every constrained query.
 The convention mirrors OCI image-index and CSS-selector specificity.
 
+**Universal-arch compatibility** (`arch: "universal2"` or `arch: "universal"`)
+is an asymmetric exception to the strict arch equality check. On darwin
+only, a stored universal-arch entry matches a query for any concrete arch
+(`x86_64`, `aarch64`) — letting producers publish a fat Mach-O once instead
+of duplicating it under both concrete-arch keys. The match contributes 0 to
+specificity (only the os check counts), so an explicit `arch: "x86_64"`
+entry always wins over a universal entry when both are present. The compat
+is one-way: a pure `arch: "x86_64"` entry does NOT satisfy a query asking
+for `arch: "universal2"`. Universal-arch on non-darwin OSes has no special
+meaning — equality applies as normal.
+
 ### 5.3 Source fallback — `resolve_or_source`
 
 When a resolver needs binary-or-source-fallback semantics (DESIGN.md §3.1
