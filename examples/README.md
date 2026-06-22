@@ -11,6 +11,7 @@ validated by `ci/validate_examples.py` and exercised by `tests/`.
 | `embedded_slice.json` | `EmbeddedSlice` | Tauri-shape compiled slice for one `(platform, channel)` with back-link to the canonical online Catalog |
 | `multipart_release.json` | `Release` | Multi-part archive (`parts[]`) plus an optional component |
 | `source_only_release.json` | `Release` | Source-only release: no prebuilt binaries, only a `source` field with VCS + archive + build hint |
+| `contents_manifest.json` | `ArchiveContents` | Per-archive file listing (formerly: clang-tool-chain-bins sidecar `.tar.zst.json`); referenced via `Asset.contents_manifest` |
 | `hierarchical/manifest.json` | `Index` | Top-level index of a hierarchical tree |
 | `hierarchical/clang/manifest.json` | `Catalog` | Sub-manifest under the hierarchical tree |
 | `hierarchical/iwyu/manifest.json` | `Catalog` | Second sub-manifest in the same tree |

@@ -69,6 +69,8 @@ def test_asset_field_numbers_stable() -> None:
         "provenance_url": 9,
         "yanked": 10,
         "yanked_reason": 11,
+        "provides": 12,
+        "contents_manifest": 13,
     }
 
 

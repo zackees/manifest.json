@@ -170,6 +170,8 @@ message Asset {
   string provenance_url = 9;
   bool   yanked         = 10;
   string yanked_reason  = 11;
+  repeated string provides     = 12;    // entry-point binaries inside this archive
+  Descriptor contents_manifest = 13;    // optional pointer to an ArchiveContents doc
 }
 
 message Part {
@@ -257,7 +259,46 @@ message Component {
 }
 ```
 
-### 4.5 Tier 4 — EmbeddedSlice (compiled for one target)
+### 4.5 ArchiveContents (per-archive file listing)
+
+Optional companion document linked from `Asset.contents_manifest`.
+Describes the file tree inside one archive — the same information the
+clang-tool-chain-bins repo already publishes as sidecar `.tar.zst.json`
+files. Verifiable via `asset_sha256` (must equal the linked Asset's
+sha256).
+
+```proto
+message ArchiveContents {
+  string   kind           = 1;  // "ArchiveContents"
+  uint32   schema_version = 2;
+  string   asset_sha256   = 3;  // back-link to Asset.sha256
+  uint64   file_count     = 4;
+  repeated ArchiveFile files = 5;
+}
+
+message ArchiveFile {
+  string path     = 1;  // forward-slashed, relative to archive root
+  string type     = 2;  // file | dir | symlink | hardlink
+  uint64 size     = 3;
+  uint32 mode     = 4;  // POSIX permission bits
+  string linkname = 5;
+  string sha256   = 6;
+}
+```
+
+Two-level scheme:
+
+- `Asset.provides[]` (flat strings, kept inline) answers the cheap query
+  "does this archive ship `clang-tidy`?" with zero extra fetches.
+- `Asset.contents_manifest` (a `Descriptor` pointing at an
+  `ArchiveContents` doc) lets a consumer who needs the full file tree
+  fetch it on demand — without bloating the parent Catalog or the
+  embedded slice.
+
+The compile-for-target tool drops `contents_manifest` from
+EmbeddedSlice output by default and keeps `provides[]`.
+
+### 4.6 Tier 4 — EmbeddedSlice (compiled for one target)
 
 ```proto
 message EmbeddedSlice {

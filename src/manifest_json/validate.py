@@ -137,6 +137,46 @@ def _validate_embedded_slice_semantics(doc: dict[str, Any]) -> None:
     _check_sha256(doc.get("online_sha256", ""), where="embedded slice online_sha256")
 
 
+def _validate_archive_contents_semantics(doc: dict[str, Any]) -> None:
+    if not doc.get("schema_version"):
+        raise ValidationError("ArchiveContents: `schema_version` is required and >0")
+    if not doc.get("asset_sha256"):
+        raise ValidationError("ArchiveContents: `asset_sha256` is required")
+    _check_sha256(doc.get("asset_sha256", ""), where="ArchiveContents asset_sha256")
+
+    files = doc.get("files") or []
+    valid_types = {"file", "dir", "symlink", "hardlink"}
+    seen_paths: set[str] = set()
+    for entry in files:
+        path = entry.get("path", "")
+        if not path:
+            raise ValidationError("ArchiveContents file: `path` is required")
+        if "\\" in path:
+            raise ValidationError(
+                f"ArchiveContents file path {path!r}: must use forward slashes"
+            )
+        if path in seen_paths:
+            raise ValidationError(f"ArchiveContents has duplicate path {path!r}")
+        seen_paths.add(path)
+        etype = entry.get("type", "")
+        if etype and etype not in valid_types:
+            raise ValidationError(
+                f"ArchiveContents file {path!r}: type must be one of "
+                f"{sorted(valid_types)}, got {etype!r}"
+            )
+        if etype in ("symlink", "hardlink") and not entry.get("linkname"):
+            raise ValidationError(
+                f"ArchiveContents file {path!r}: {etype} requires `linkname`"
+            )
+        _check_sha256(entry.get("sha256", ""), where=f"ArchiveContents file {path!r}")
+
+    declared = doc.get("file_count", 0)
+    if declared and declared != len(files):
+        raise ValidationError(
+            f"ArchiveContents: file_count={declared} but files[] has {len(files)} entries"
+        )
+
+
 def validate_document(doc: dict[str, Any]) -> None:
     """Full structural + semantic validation. Raises ValidationError on any
     violation. Returns None on success."""
@@ -150,6 +190,8 @@ def validate_document(doc: dict[str, Any]) -> None:
         _validate_release_semantics(doc)
     elif kind == "EmbeddedSlice":
         _validate_embedded_slice_semantics(doc)
+    elif kind == "ArchiveContents":
+        _validate_archive_contents_semantics(doc)
     else:
         raise ValidationError(f"unknown kind {kind!r}")
 

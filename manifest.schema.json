@@ -1,8 +1,63 @@
 {
   "$defs": {
+    "ArchiveContents": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_sha256": {
+          "type": "string"
+        },
+        "file_count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ArchiveFile"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "schema_version": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "ArchiveFile": {
+      "additionalProperties": false,
+      "properties": {
+        "linkname": {
+          "type": "string"
+        },
+        "mode": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "size": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "Asset": {
       "additionalProperties": false,
       "properties": {
+        "contents_manifest": {
+          "$ref": "#/$defs/Descriptor"
+        },
         "filename": {
           "type": "string"
         },
@@ -17,6 +72,12 @@
         },
         "provenance_url": {
           "type": "string"
+        },
+        "provides": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "sbom_url": {
           "type": "string"
@@ -447,6 +508,24 @@
           "properties": {
             "kind": {
               "const": "EmbeddedSlice"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "#/$defs/ArchiveContents"
+        },
+        {
+          "properties": {
+            "kind": {
+              "const": "ArchiveContents"
             }
           },
           "required": [

@@ -18,6 +18,7 @@ ROOT_KINDS: dict[str, str] = {
     "Catalog": "Catalog",
     "Release": "Release",
     "EmbeddedSlice": "EmbeddedSlice",
+    "ArchiveContents": "ArchiveContents",
 }
 
 _SCALAR_MAP: dict[int, dict[str, Any]] = {

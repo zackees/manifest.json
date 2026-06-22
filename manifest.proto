@@ -57,6 +57,18 @@ message Asset {
   string provenance_url      = 9;
   bool   yanked              = 10;
   string yanked_reason       = 11;
+
+  // Entry-point binaries this archive provides (e.g. ["clang-tidy",
+  // "clang-format", "iwyu"]). Flat-string summary; cheap to keep inline.
+  // Lets consumers grep "does archive X ship tool Y?" without fetching
+  // the archive or the full ArchiveContents document.
+  repeated string provides = 12;
+
+  // Optional pointer to a separate ArchiveContents document listing
+  // every file inside the archive. Heavy (often hundreds of entries) —
+  // lives in its own file so it doesn't bloat Catalogs or embedded
+  // slices. Verifiable via Descriptor.sha256.
+  Descriptor contents_manifest = 13;
 }
 
 // One chunk of a multi-part archive.
@@ -183,4 +195,29 @@ message CompiledFor {
   Platform platform = 1;
   Variant  variant  = 2;
   string   channel  = 3; // the channel that resolved to compiled_version
+}
+
+// ---------------------------------------------------------------------------
+// ArchiveContents (per archive)
+//
+// Optional companion document describing the file tree inside a single
+// archive Asset. Modeled after the clang-tool-chain-bins sidecar `.tar.zst.json`
+// pattern (file_count + files[]). Verifiable via `asset_sha256`.
+// ---------------------------------------------------------------------------
+
+message ArchiveContents {
+  string   kind           = 1; // "ArchiveContents"
+  uint32   schema_version = 2;
+  string   asset_sha256   = 3; // back-link: must equal the Asset.sha256 this describes
+  uint64   file_count     = 4;
+  repeated ArchiveFile files = 5;
+}
+
+message ArchiveFile {
+  string path     = 1; // forward-slashed, relative to archive root
+  string type     = 2; // "file" | "dir" | "symlink" | "hardlink"
+  uint64 size     = 3;
+  uint32 mode     = 4; // POSIX permission bits
+  string linkname = 5; // target for symlinks/hardlinks
+  string sha256   = 6; // optional per-file content hash
 }
