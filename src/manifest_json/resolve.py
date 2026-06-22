@@ -74,6 +74,105 @@ _UNIVERSAL_DARWIN_ARCHES = {"universal", "universal2"}
 _UNIVERSAL_DARWIN_COVERS = {"x86_64", "aarch64", "universal", "universal2"}
 
 
+# Query-side normalization. Canonical values are `x86_64`, `aarch64`,
+# `armv7`, `riscv64`, `wasm32` (per DESIGN.md §3.1). Callers commonly
+# use looser conventions inherited from the package-manager they grew up
+# with — npm uses `x64`/`arm64`, Debian/Docker use `amd64`/`arm64`, some
+# users still type `x86` meaning "modern Intel desktop chip" (which is
+# really x86_64 / amd64). Normalize on the query side so the resolver
+# does what they meant.
+#
+# Note: `x86` historically means 32-bit (i386/i686). We map it to
+# `x86_64` because in 2026 nobody asking for "x86" wants 32-bit; if you
+# genuinely want 32-bit Intel, spell it `i686` or `i386` (those are
+# left UNNORMALIZED — distinct from x86_64).
+_ARCH_ALIASES: dict[str, str] = {
+    # x86_64 family
+    "x86_64":  "x86_64",
+    "x64":     "x86_64",
+    "amd64":   "x86_64",
+    "x86-64":  "x86_64",
+    "x86":     "x86_64",  # contentious but matches modern desktop usage
+    # aarch64 family
+    "aarch64": "aarch64",
+    "arm64":   "aarch64",
+    "arm":     "aarch64",  # modern "arm" almost always means 64-bit
+    # 32-bit ARM (kept distinct)
+    "armv7":   "armv7",
+    "armhf":   "armv7",
+    "armv7l":  "armv7",
+    # 32-bit Intel (kept distinct from x86_64 — see note above)
+    "i686":    "i686",
+    "i386":    "i686",
+    "x86_32":  "i686",
+    # riscv64 family
+    "riscv64": "riscv64",
+    "rv64":    "riscv64",
+    # wasm
+    "wasm32":  "wasm32",
+    "wasm":    "wasm32",
+    # universal — left alone, handled by _arches_compatible
+    "universal":  "universal",
+    "universal2": "universal2",
+}
+
+_OS_ALIASES: dict[str, str] = {
+    "linux":    "linux",
+    # darwin family
+    "darwin":   "darwin",
+    "macos":    "darwin",
+    "mac":      "darwin",
+    "osx":      "darwin",
+    "macosx":   "darwin",
+    # windows family
+    "windows":  "windows",
+    "win":      "windows",
+    "win32":    "windows",
+    "win64":    "windows",
+    # bsd
+    "freebsd":  "freebsd",
+    "openbsd":  "openbsd",
+    "netbsd":   "netbsd",
+    # wasm
+    "wasi":     "wasi",
+}
+
+
+def _normalize_arch(arch: str) -> str:
+    """Map a caller-side arch alias to its canonical form. Unknown values
+    pass through unchanged — the resolver still treats them as opaque
+    strings for equality comparison."""
+    if not arch:
+        return arch
+    return _ARCH_ALIASES.get(arch.lower(), arch)
+
+
+def _normalize_os(os_name: str) -> str:
+    """Map a caller-side OS alias to its canonical form. See _normalize_arch."""
+    if not os_name:
+        return os_name
+    return _OS_ALIASES.get(os_name.lower(), os_name)
+
+
+def normalize_platform(platform: dict[str, Any]) -> dict[str, Any]:
+    """Return a copy of `platform` with `os` and `arch` normalized to
+    canonical values. Other fields pass through unchanged.
+
+    Producers should still publish canonical values in their manifests
+    — normalization is meant for the consumer-facing query, not the
+    producer-side stored form. Normalizing both sides would mask
+    producer bugs (e.g. shipping `arm64` instead of `aarch64`).
+    """
+    if not platform:
+        return platform
+    out = dict(platform)
+    if "os" in out and out["os"]:
+        out["os"] = _normalize_os(out["os"])
+    if "arch" in out and out["arch"]:
+        out["arch"] = _normalize_arch(out["arch"])
+    return out
+
+
 def _arches_compatible(stored_os: str, stored_arch: str, query_arch: str) -> bool:
     """True if a stored `(os, arch)` entry should match a query arch.
 
@@ -220,17 +319,24 @@ def resolve_in_catalog(
             f"channel {channel!r} -> version {version!r}, but not in releases[]"
         )
 
+    # Normalize the caller's platform tuple. Aliases like `arm64`/`aarch64`
+    # or `x64`/`x86_64` all map to canonical forms before matching, so a
+    # consumer that came from npm-land (`x64`) or Debian-land (`amd64`)
+    # gets the right answer without knowing our schema's exact vocabulary.
+    # Producer-side (`stored_platform`) is NOT normalized — see
+    # `normalize_platform` docstring.
+    query_platform = normalize_platform(platform)
     query_variant = variant or {}
     matches: list[tuple[int, dict[str, Any]]] = []
     for rp in release.get("platforms", []):
         stored_platform = rp.get("platform", {}) or {}
         stored_variant = rp.get("variant", {}) or {}
-        if not platform_matches(stored_platform, platform):
+        if not platform_matches(stored_platform, query_platform):
             continue
         if not variant_matches(stored_variant, query_variant):
             continue
         score = (
-            _specificity(stored_platform, platform)
+            _specificity(stored_platform, query_platform)
             + _specificity(stored_variant, query_variant)
         )
         matches.append((score, rp))
@@ -238,7 +344,8 @@ def resolve_in_catalog(
     if not matches:
         raise NoMatchingAssetError(
             f"no asset in release {version!r} matches "
-            f"platform={platform!r} variant={variant!r}"
+            f"platform={platform!r} (normalized: {query_platform!r}) "
+            f"variant={variant!r}"
         )
 
     # Keep only the maximum-specificity matches (CSS-selector style).

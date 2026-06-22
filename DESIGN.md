@@ -374,6 +374,39 @@ bare `{os, arch}` fallback alongside explicit `libc:musl` / `abi:msvc`
 variants without the bare entry shadow-matching every constrained query.
 The convention mirrors OCI image-index and CSS-selector specificity.
 
+**Query-side alias normalization.** Callers come from many ecosystems with
+incompatible naming conventions for the same architecture (`x64` in npm,
+`amd64` in Debian/Docker, `x86_64` in Rust target triples, casual `x86`).
+The resolver normalizes the caller's query through a fixed alias map before
+matching, so any of those queries resolve to the canonical `x86_64` stored
+entry:
+
+| Canonical | Recognized aliases |
+|---|---|
+| `x86_64` | `x86_64`, `x64`, `amd64`, `x86-64`, `x86` |
+| `aarch64` | `aarch64`, `arm64`, `arm` |
+| `armv7` | `armv7`, `armhf`, `armv7l` |
+| `i686` | `i686`, `i386`, `x86_32` (kept distinct from x86_64) |
+| `riscv64` | `riscv64`, `rv64` |
+| `wasm32` | `wasm32`, `wasm` |
+| OS `darwin` | `darwin`, `macos`, `mac`, `osx`, `macosx` |
+| OS `windows` | `windows`, `win`, `win32`, `win64` |
+
+Alias matching is case-insensitive. Unknown values pass through unchanged
+and still get equality-compared.
+
+**Producer-side values are NOT normalized.** If a producer mistakenly
+publishes `arch: "arm64"` instead of `aarch64`, the resolver doesn't
+silently fix it — the manifest fails to match any query and the bug
+surfaces. Validators can additionally enforce canonical values on the
+stored side.
+
+Note on `x86`: 32-bit Intel was historically called `x86` and modern 64-bit
+Intel desktop chips are `x86_64`/`amd64`. We normalize `x86 → x86_64`
+because in 2026 essentially nobody asking for "x86" wants the 32-bit
+variant. Genuine 32-bit users spell it `i686`/`i386`/`x86_32` (all of
+which map to `i686`, distinct from `x86_64`).
+
 **Universal-arch compatibility** (`arch: "universal2"` or `arch: "universal"`)
 is an asymmetric exception to the strict arch equality check. On darwin
 only, a stored universal-arch entry matches a query for any concrete arch
