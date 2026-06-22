@@ -168,6 +168,79 @@ def test_apple_sdk_real_world_scenario():
         assert asset["filename"] == "sdk.tar.zstd", f"failed for arch={arch}"
 
 
+def test_apple_sdk_arm_aliased_query_resolves_via_universal2():
+    """End-to-end regression guard requested mid-loop: a user-facing
+    `apple-sdk` query with the very casual `arch="arm"` (and `os="mac"`)
+    must resolve to the universal2 asset. The chain is:
+
+        os    "mac"  -> normalize -> "darwin"
+        arch  "arm"  -> normalize -> "aarch64"
+        match darwin/aarch64 against stored darwin/universal2 via
+        _arches_compatible -> True (universal-on-darwin compat)
+
+    This mirrors the live zackees.github.io/soldr-toolchain/apple-sdk
+    catalog after the universal2 collapse.
+    """
+    from manifest_json.resolve import resolve_all_in_catalog
+
+    apple_sdk_catalog = {
+        "kind": "Catalog",
+        "schema_version": 1,
+        "tool": "apple-sdk",
+        "online_url": "https://zackees.github.io/soldr-toolchain/apple-sdk/manifest.json",
+        "channels": {"latest-stable": "MacOSX11.3", "stable": "MacOSX11.3"},
+        "releases": [{
+            "schema_version": 1,
+            "version": "MacOSX11.3",
+            "min_client_version": 1,
+            "platforms": [{
+                "platform": {"os": "darwin", "arch": "universal2"},
+                "asset": {
+                    "filename": "sdk.tar.zstd",
+                    "media_type": "application/zstd",
+                    "size_bytes": 52644445,
+                    "sha256": "053ac5617f5e6afd5218bec4e871cc55a6a9ab2c0b1f2f77e336dbdd48eabe56",
+                    "urls": [
+                        "https://media.githubusercontent.com/media/zackees/soldr-toolchain/assets/apple-sdk/MacOSX11.3/darwin-universal2/sdk.tar.zstd",
+                    ],
+                },
+            }],
+        }],
+    }
+
+    # Single-result: every alias permutation hits the same fat-binary asset.
+    queries = [
+        {"os": "darwin",  "arch": "arm"},
+        {"os": "darwin",  "arch": "aarch64"},
+        {"os": "darwin",  "arch": "arm64"},
+        {"os": "darwin",  "arch": "x86_64"},
+        {"os": "darwin",  "arch": "x86"},      # contentious; should still hit
+        {"os": "darwin",  "arch": "x64"},
+        {"os": "darwin",  "arch": "amd64"},
+        {"os": "darwin",  "arch": "universal2"},
+        {"os": "mac",     "arch": "arm"},
+        {"os": "macos",   "arch": "arm64"},
+        {"os": "osx",     "arch": "aarch64"},
+    ]
+    for q in queries:
+        asset = resolve_in_catalog(
+            apple_sdk_catalog, "apple-sdk", q, "latest-stable",
+        )
+        assert asset["filename"] == "sdk.tar.zstd", (
+            f"single-result resolve failed for {q!r}: got {asset['filename']!r}"
+        )
+
+    # Multi-result: same queries surface exactly one match (deduped).
+    for q in queries:
+        results = resolve_all_in_catalog(
+            apple_sdk_catalog, "apple-sdk", q, "latest-stable",
+        )
+        assert len(results) == 1, (
+            f"resolve_all returned {len(results)} for {q!r}, want 1"
+        )
+        assert results[0].asset["filename"] == "sdk.tar.zstd"
+
+
 def test_universal2_does_not_match_non_darwin_query():
     """A `darwin/universal2` entry must not be served to a linux query.
     The universal compat only relaxes the arch check; the os check
