@@ -111,6 +111,28 @@ def variant_matches(stored: dict[str, Any], query: dict[str, Any]) -> bool:
     return True
 
 
+def _specificity(stored: dict[str, Any], query: dict[str, Any]) -> int:
+    """Count fields that are explicitly set in BOTH stored and query (and equal).
+
+    Used for specificity-priority resolution: when multiple stored platforms
+    wildcard-match a query, prefer the one whose constraints most precisely
+    align with the query. CSS-selector / OCI-image-index convention.
+    """
+    score = 0
+    for key, qval in query.items():
+        if not qval:
+            continue
+        sval = stored.get(key)
+        if not sval:
+            continue
+        if key == "features":
+            # Each matched feature contributes one point.
+            score += len(set(qval) & set(sval))
+        elif sval == qval:
+            score += 1
+    return score
+
+
 def resolve_in_catalog(
     catalog: dict[str, Any],
     tool: str,
@@ -120,6 +142,21 @@ def resolve_in_catalog(
 ) -> dict[str, Any]:
     """Resolve a (tool, platform, channel, variant) query against a Catalog
     document. Returns the matching Asset dict.
+
+    Semantics (DESIGN.md §5):
+      1. Filter platforms by `platform_matches` AND `variant_matches`
+         (wildcard semantics — missing field on either side matches).
+      2. Of the surviving candidates, keep only those with maximum
+         combined platform+variant specificity (CSS-selector style).
+      3. If exactly one survives, return its asset.
+         If zero, raise NoMatchingAssetError.
+         If >1, raise AmbiguityError (true tie — producer published two
+         equally-specific entries the resolver cannot disambiguate).
+
+    Step 2 is what lets a producer publish e.g.
+        {os:linux, arch:x86_64}                (fallback, no libc claim)
+        {os:linux, arch:x86_64, libc:musl}     (explicit musl variant)
+    and have a `libc:musl` query unambiguously hit the explicit entry.
 
     Raises a subclass of ResolveError on any failure.
     """
@@ -147,24 +184,35 @@ def resolve_in_catalog(
             f"channel {channel!r} -> version {version!r}, but not in releases[]"
         )
 
-    matches: list[dict[str, Any]] = []
+    query_variant = variant or {}
+    matches: list[tuple[int, dict[str, Any]]] = []
     for rp in release.get("platforms", []):
         stored_platform = rp.get("platform", {}) or {}
         stored_variant = rp.get("variant", {}) or {}
-        if platform_matches(stored_platform, platform) and variant_matches(
-            stored_variant, variant or {}
-        ):
-            matches.append(rp)
+        if not platform_matches(stored_platform, platform):
+            continue
+        if not variant_matches(stored_variant, query_variant):
+            continue
+        score = (
+            _specificity(stored_platform, platform)
+            + _specificity(stored_variant, query_variant)
+        )
+        matches.append((score, rp))
 
     if not matches:
         raise NoMatchingAssetError(
             f"no asset in release {version!r} matches "
             f"platform={platform!r} variant={variant!r}"
         )
-    if len(matches) > 1:
-        raise AmbiguityError(matches)
 
-    return matches[0]["asset"]
+    # Keep only the maximum-specificity matches (CSS-selector style).
+    best_score = max(s for s, _ in matches)
+    winners = [rp for s, rp in matches if s == best_score]
+
+    if len(winners) > 1:
+        raise AmbiguityError(winners)
+
+    return winners[0]["asset"]
 
 
 def resolve_or_source(

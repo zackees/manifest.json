@@ -346,15 +346,25 @@ message CompiledFor {
 4. release <- find(catalog.releases, r => r.version == version)
                                              // None -> VersionNotInCatalog
 5. matches <- [
-       rp for rp in release.platforms
+       (specificity(rp), rp) for rp in release.platforms
        if platform_matches(rp.platform, platform)
        and (variant is None or variant_matches(rp.variant, variant))
    ]
+   # Keep only the maximum-specificity candidates (CSS-selector style).
+   best   <- max(s for s, _ in matches)
+   winners <- [rp for s, rp in matches if s == best]
 
-6. if len(matches) == 0: raise NoMatchingAsset
-   if len(matches) == 1: return matches[0].asset
-   if len(matches) >  1: raise AmbiguityError(matches)
+6. if len(matches)  == 0: raise NoMatchingAsset
+   if len(winners) == 1: return winners[0].asset
+   if len(winners) >  1: raise AmbiguityError(winners)
 ```
+
+**Specificity** counts the fields present in *both* `stored.platform` and the
+query that are equal — i.e. the dimensions on which the producer explicitly
+constrained AND the caller explicitly asked. This lets producers publish a
+bare `{os, arch}` fallback alongside explicit `libc:musl` / `abi:msvc`
+variants without the bare entry shadow-matching every constrained query.
+The convention mirrors OCI image-index and CSS-selector specificity.
 
 ### 5.3 Source fallback — `resolve_or_source`
 
