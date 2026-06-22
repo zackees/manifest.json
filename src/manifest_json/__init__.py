@@ -18,6 +18,7 @@ from manifest_json.resolve import (
     variant_matches,
 )
 from manifest_json.compile import compile_for_target
+from manifest_json.platform import flatten_platform
 from manifest_json.schema import generate_json_schema
 from manifest_json.validate import (
     ValidationError,
@@ -37,6 +38,7 @@ __all__ = [
     "ValidationError",
     "VersionNotInCatalogError",
     "compile_for_target",
+    "flatten_platform",
     "generate_json_schema",
     "normalize_platform",
     "platform_matches",
