@@ -138,13 +138,71 @@ _OS_ALIASES: dict[str, str] = {
 }
 
 
+# Some queries are genuinely ambiguous between 32-bit and 64-bit
+# interpretations. `x86` historically means 32-bit Intel, but in modern
+# desktop usage means 64-bit. `arm` could mean armv7 (legacy) or aarch64
+# (modern). When a query uses one of these, resolve_all_in_catalog tries
+# BOTH expansions in priority order — and surfaces both results if both
+# match — so the caller can disambiguate visually.
+#
+# Single-canonical aliases (`x64`, `amd64`, etc.) expand to a single
+# entry; the order is purely informational.
+_ARCH_EXPANSIONS: dict[str, list[str]] = {
+    # ambiguous: 64-bit first (modern desktop), 32-bit as fallback
+    "x86":     ["x86_64", "i686"],
+    "arm":     ["aarch64", "armv7"],
+    # single-canonical (same as _ARCH_ALIASES but as a one-element list)
+    "x86_64":  ["x86_64"],
+    "x64":     ["x86_64"],
+    "amd64":   ["x86_64"],
+    "x86-64":  ["x86_64"],
+    "aarch64": ["aarch64"],
+    "arm64":   ["aarch64"],
+    "armv7":   ["armv7"],
+    "armhf":   ["armv7"],
+    "armv7l":  ["armv7"],
+    "i686":    ["i686"],
+    "i386":    ["i686"],
+    "x86_32":  ["i686"],
+    "riscv64": ["riscv64"],
+    "rv64":    ["riscv64"],
+    "wasm32":  ["wasm32"],
+    "wasm":    ["wasm32"],
+    "universal":  ["universal"],
+    "universal2": ["universal2"],
+}
+
+
 def _normalize_arch(arch: str) -> str:
     """Map a caller-side arch alias to its canonical form. Unknown values
     pass through unchanged — the resolver still treats them as opaque
-    strings for equality comparison."""
+    strings for equality comparison.
+
+    For the single-result resolve_in_catalog this picks the FIRST entry
+    in the expansion list (the preferred / modern interpretation).
+    resolve_all_in_catalog uses `_expand_arch` to surface ALL candidates.
+    """
     if not arch:
         return arch
+    expansions = _ARCH_EXPANSIONS.get(arch.lower())
+    if expansions:
+        return expansions[0]
     return _ARCH_ALIASES.get(arch.lower(), arch)
+
+
+def _expand_arch(arch: str) -> list[str]:
+    """Return the ordered list of canonical arches a caller-side alias
+    expands to. Used by resolve_all_in_catalog so an ambiguous query
+    like `arch: "x86"` surfaces both `x86_64` matches (first) and
+    `i686` matches (second) instead of silently picking one.
+    """
+    if not arch:
+        return [""]
+    expansions = _ARCH_EXPANSIONS.get(arch.lower())
+    if expansions:
+        return list(expansions)
+    # Unknown / single-canonical via _ARCH_ALIASES — fall back to single.
+    return [_ARCH_ALIASES.get(arch.lower(), arch)]
 
 
 def _normalize_os(os_name: str) -> str:
@@ -356,6 +414,95 @@ def resolve_in_catalog(
         raise AmbiguityError(winners)
 
     return winners[0]["asset"]
+
+
+def resolve_all_in_catalog(
+    catalog: dict[str, Any],
+    tool: str,
+    platform: dict[str, Any],
+    channel: str,
+    variant: dict[str, Any] | None = None,
+) -> list[Resolution]:
+    """Return EVERY asset that matches a (tool, platform, channel, variant)
+    query, ordered:
+      1. by arch-expansion priority (x86_64 before i686 for `x86` queries)
+      2. by specificity, descending (more-specific matches first)
+      3. by filename, ascending (deterministic ordering when tied)
+
+    Unlike resolve_in_catalog this NEVER raises AmbiguityError — when the
+    caller's intent is ambiguous (e.g. `arch: "x86"` against a catalog
+    that ships both x86_64 and i686 builds), both results come back and
+    the caller picks. The first result is the preferred interpretation.
+
+    Returns an empty list when no asset matches. Other resolver errors
+    (SchemaError, ChannelNotFoundError, VersionNotInCatalogError)
+    propagate normally — those are facts about the catalog, not the
+    query.
+    """
+    if catalog.get("kind") != "Catalog":
+        raise SchemaError(f"expected kind=Catalog, got {catalog.get('kind')!r}")
+    if catalog.get("tool") != tool:
+        raise SchemaError(
+            f"catalog is for tool {catalog.get('tool')!r}, queried {tool!r}"
+        )
+
+    channels = catalog.get("channels", {})
+    if channel not in channels:
+        raise ChannelNotFoundError(
+            f"channel {channel!r} not in catalog (have: {sorted(channels)})"
+        )
+    version = channels[channel]
+
+    release = None
+    for r in catalog.get("releases", []):
+        if r.get("version") == version:
+            release = r
+            break
+    if release is None:
+        raise VersionNotInCatalogError(
+            f"channel {channel!r} -> version {version!r}, but not in releases[]"
+        )
+
+    query_variant = variant or {}
+    base_platform = dict(platform or {})
+    base_platform["os"] = _normalize_os(base_platform.get("os", ""))
+    raw_arch = base_platform.get("arch", "")
+    arch_expansions = _expand_arch(raw_arch) if raw_arch else [""]
+
+    # Collect candidates keyed by (asset filename, sha) so the same asset
+    # surfacing under multiple arch expansions is deduped.
+    seen: set[tuple[str, str]] = set()
+    out: list[tuple[int, int, str, Resolution]] = []  # (arch_priority, -specificity, filename, Resolution)
+
+    for arch_priority, query_arch in enumerate(arch_expansions):
+        q = dict(base_platform)
+        if query_arch:
+            q["arch"] = query_arch
+        for rp in release.get("platforms", []):
+            stored_platform = rp.get("platform", {}) or {}
+            stored_variant = rp.get("variant", {}) or {}
+            if not platform_matches(stored_platform, q):
+                continue
+            if not variant_matches(stored_variant, query_variant):
+                continue
+            asset = rp.get("asset", {}) or {}
+            key = (asset.get("filename", ""), asset.get("sha256", ""))
+            if key in seen:
+                continue
+            seen.add(key)
+            score = (
+                _specificity(stored_platform, q)
+                + _specificity(stored_variant, query_variant)
+            )
+            out.append((
+                arch_priority,
+                -score,
+                asset.get("filename", ""),
+                Resolution(kind="binary", asset=asset, version=version),
+            ))
+
+    out.sort(key=lambda t: (t[0], t[1], t[2]))
+    return [r for _, _, _, r in out]
 
 
 def resolve_or_source(

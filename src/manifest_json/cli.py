@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from manifest_json.compile import compile_for_target, serialize_slice
-from manifest_json.resolve import ResolveError, resolve_in_catalog
+from manifest_json.resolve import ResolveError, resolve_all_in_catalog, resolve_in_catalog
 from manifest_json.schema import generate_json_schema
 from manifest_json.validate import ValidationError, validate_document
 
@@ -95,22 +95,49 @@ def gen_schema_main(argv: list[str] | None = None) -> int:
 
 
 def resolve_main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="manifest-resolve")
+    p = argparse.ArgumentParser(
+        prog="manifest-resolve",
+        description=(
+            "Resolve a (tool, platform, channel, variant) query against a "
+            "Catalog. Default: one match (pretty JSON, exit 1 on ambiguity). "
+            "With --all: every match as JSON Lines, ordered most-preferred "
+            "first (exit 0 even when empty)."
+        ),
+    )
     p.add_argument("catalog", type=Path)
     p.add_argument("--tool", required=True)
     p.add_argument("--platform", required=True, help="os=linux,arch=x86_64")
     p.add_argument("--channel", required=True)
     p.add_argument("--variant", default="")
+    p.add_argument(
+        "--all",
+        action="store_true",
+        help=(
+            "Return every matching asset as JSON Lines, deduped and "
+            "ordered by arch-expansion priority then specificity. Use "
+            "this when the query is ambiguous (e.g. arch=x86 matches "
+            "both x86_64 and i686 builds) and you want to see every "
+            "candidate instead of getting an AmbiguityError."
+        ),
+    )
     args = p.parse_args(argv)
     catalog = _read_json(args.catalog)
+    plat = _parse_kv(args.platform)
+    var = _parse_kv(args.variant) or None
+
+    if args.all:
+        try:
+            results = resolve_all_in_catalog(catalog, args.tool, plat, args.channel, var)
+        except ResolveError as exc:
+            print(f"resolve failed: {exc}", file=sys.stderr)
+            return 1
+        for r in results:
+            # JSON Lines: one compact JSON doc per line, no trailing comma.
+            sys.stdout.write(json.dumps(r.asset, sort_keys=True) + "\n")
+        return 0
+
     try:
-        asset = resolve_in_catalog(
-            catalog,
-            args.tool,
-            _parse_kv(args.platform),
-            args.channel,
-            _parse_kv(args.variant) or None,
-        )
+        asset = resolve_in_catalog(catalog, args.tool, plat, args.channel, var)
     except ResolveError as exc:
         print(f"resolve failed: {exc}", file=sys.stderr)
         return 1
