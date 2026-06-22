@@ -37,6 +37,20 @@ class NoBinaryOrSourceError(ResolveError):
     """No matching binary AND no source fallback available."""
 
 
+class TripleParseError(ResolveError):
+    """A rustc-style target triple could not be parsed into a v1 Platform.
+
+    Raised for malformed triples (fewer than 3 segments) and for unknown
+    vendors. Vendor is load-bearing — `uwp`, `win7`, `unikraft`, `koji`
+    name distinct rustc targets that share os/arch/abi with a canonical
+    sibling but ship different artifacts (see issue #7 lesson 1). Rather
+    than silently dropping the vendor on the floor, we refuse to parse.
+    Unknown arches and OSes pass through unchanged so the downstream
+    resolver fails closed (NoMatchingAssetError) rather than fuzzy-merging
+    near-arches like `x86_64h` into `x86_64`.
+    """
+
+
 class AmbiguityError(ResolveError):
     """Multiple (platform, variant) entries matched; caller must narrow."""
 
@@ -97,17 +111,26 @@ _ARCH_ALIASES: dict[str, str] = {
     "aarch64": "aarch64",
     "arm64":   "aarch64",
     "arm":     "aarch64",  # modern "arm" almost always means 64-bit
+    "armv8":   "aarch64",
+    "armv8a":  "aarch64",
     # 32-bit ARM (kept distinct)
     "armv7":   "armv7",
     "armhf":   "armv7",
     "armv7l":  "armv7",
+    "armv7a":  "armv7",
     # 32-bit Intel (kept distinct from x86_64 — see note above)
     "i686":    "i686",
+    "i586":    "i686",
+    "i486":    "i686",
     "i386":    "i686",
     "x86_32":  "i686",
     # riscv64 family
-    "riscv64": "riscv64",
-    "rv64":    "riscv64",
+    "riscv64":   "riscv64",
+    "riscv64gc": "riscv64",
+    "rv64":      "riscv64",
+    # 64-bit PowerPC little-endian (Debian `ppc64le` / rustc `powerpc64le`)
+    "powerpc64le": "powerpc64le",
+    "ppc64le":     "powerpc64le",
     # wasm
     "wasm32":  "wasm32",
     "wasm":    "wasm32",
@@ -324,6 +347,100 @@ def _specificity(stored: dict[str, Any], query: dict[str, Any]) -> int:
         elif sval == qval:
             score += 1
     return score
+
+
+# Closed allowlist of rustc-canonical vendors. v1 Platform has no
+# `vendor` field by design — vendor isn't a resolver-relevant axis once
+# you trust the producer's published tuple. But rustc target triples put
+# vendor in a load-bearing slot: `x86_64-uwp-windows-msvc` and
+# `x86_64-pc-windows-msvc` are different targets with different ABIs
+# (issue #7 lesson 1). parse_target_triple refuses to silently drop the
+# vendor on the floor; non-canonical vendors must be transcribed to v1
+# by the producer, which forces the explicit "is this artifact really
+# compatible with the canonical sibling?" decision.
+_KNOWN_RUSTC_VENDORS: frozenset[str] = frozenset({"unknown", "pc", "apple"})
+
+
+# rustc collapses libc + ABI into one trailing env slot. v1 splits them
+# (Platform.libc vs Platform.abi). The translation is OS-aware because
+# rustc reuses the token `gnu` to mean two different things: on Linux it
+# means "glibc with the gnu ABI" (libc:glibc); on Windows it means
+# "MinGW-w64 toolchain" (abi:gnu). _classify_rustc_env disambiguates.
+_RUSTC_LIBC_TOKENS: frozenset[str] = frozenset({"musl", "uclibc", "newlib"})
+
+
+def _classify_rustc_env(os_canonical: str, env: str) -> tuple[str, str]:
+    """Map a rustc env-slot token to a v1 (field, value) pair.
+
+    Unknown tokens default to the `abi` slot — the downstream resolver
+    will then either find a matching abi entry or fail closed with
+    NoMatchingAssetError, never silently miscompiling.
+    """
+    if os_canonical == "linux":
+        if env == "gnu":
+            # rustc "gnu" on Linux = glibc-with-gnu-ABI; v1 canonical libc value
+            # is "glibc" (see examples/catalog.json, examples/github_release.json).
+            return ("libc", "glibc")
+        if env in _RUSTC_LIBC_TOKENS:
+            return ("libc", env)
+        return ("abi", env)
+    if os_canonical == "windows":
+        # All Windows env tokens (msvc, gnu, gnullvm) name an ABI/runtime,
+        # not a libc — see examples/catalog.json windows entries.
+        return ("abi", env)
+    if env in _RUSTC_LIBC_TOKENS:
+        return ("libc", env)
+    return ("abi", env)
+
+
+def parse_target_triple(triple: str) -> dict[str, Any]:
+    """Parse a rustc-style target triple into a v1 Platform dict.
+
+    Format: ``<arch>-<vendor>-<os>[-<env>]``. arch and os are normalized
+    through the consumer alias map (so `amd64-unknown-linux-gnu` works
+    even though rustc itself would spell it `x86_64-unknown-linux-gnu`).
+
+    Examples:
+        x86_64-unknown-linux-gnu   -> {os: linux,   arch: x86_64,  libc: glibc}
+        x86_64-unknown-linux-musl  -> {os: linux,   arch: x86_64,  libc: musl}
+        aarch64-apple-darwin       -> {os: darwin,  arch: aarch64}
+        x86_64-pc-windows-msvc     -> {os: windows, arch: x86_64,  abi: msvc}
+        x86_64-pc-windows-gnu      -> {os: windows, arch: x86_64,  abi: gnu}
+
+    Raises:
+        TripleParseError: empty string, fewer than 3 segments, or an
+            unknown vendor. Unknown arches and OSes pass through
+            unchanged — the resolver fails closed downstream rather
+            than fuzzy-merging near-arches (issue #7 lesson 2).
+    """
+    if not triple:
+        raise TripleParseError("empty triple")
+    parts = triple.split("-")
+    if len(parts) < 3:
+        raise TripleParseError(
+            f"triple {triple!r} has {len(parts)} segment(s); "
+            f"expected at least 3 (arch-vendor-os[-env])"
+        )
+    arch_raw, vendor, os_raw = parts[0], parts[1], parts[2]
+    env = parts[3] if len(parts) >= 4 else ""
+
+    if vendor not in _KNOWN_RUSTC_VENDORS:
+        raise TripleParseError(
+            f"unknown vendor {vendor!r} in triple {triple!r}; "
+            f"known: {sorted(_KNOWN_RUSTC_VENDORS)}. "
+            f"Non-canonical vendors (uwp, win7, unikraft, koji, ...) name "
+            f"distinct rustc targets — transcribe them to v1 explicitly "
+            f"rather than parsing through this helper."
+        )
+
+    out: dict[str, Any] = {
+        "arch": _normalize_arch(arch_raw),
+        "os":   _normalize_os(os_raw),
+    }
+    if env:
+        slot, value = _classify_rustc_env(out["os"], env)
+        out[slot] = value
+    return out
 
 
 def resolve_in_catalog(
