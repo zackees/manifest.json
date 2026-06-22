@@ -61,6 +61,33 @@ class Resolution:
     version: str = ""
 
 
+# Multi-arch / fat-binary support. A producer can publish an asset with
+# `arch: "universal2"` (Apple's term for a fat Mach-O containing both
+# x86_64 and aarch64) or `arch: "universal"` (generic). The resolver
+# treats those stored values as compatible with any of the concrete
+# query arches listed below — so a caller running on darwin/x86_64
+# gets the fat binary when no x86_64-specific variant is published.
+#
+# Specificity (see _specificity) ensures an explicit-arch match still
+# wins when both are present.
+_UNIVERSAL_DARWIN_ARCHES = {"universal", "universal2"}
+_UNIVERSAL_DARWIN_COVERS = {"x86_64", "aarch64", "universal", "universal2"}
+
+
+def _arches_compatible(stored_os: str, stored_arch: str, query_arch: str) -> bool:
+    """True if a stored `(os, arch)` entry should match a query arch.
+
+    Exact equality always matches. The universal2/universal special case
+    only kicks in on darwin — that's the only ecosystem where fat
+    binaries are a real distribution convention.
+    """
+    if stored_arch == query_arch:
+        return True
+    if stored_os == "darwin" and stored_arch in _UNIVERSAL_DARWIN_ARCHES:
+        return query_arch in _UNIVERSAL_DARWIN_COVERS
+    return False
+
+
 def platform_matches(stored: dict[str, Any], query: dict[str, Any]) -> bool:
     """True iff `stored` and `query` agree on every field present in both.
 
@@ -70,6 +97,9 @@ def platform_matches(stored: dict[str, Any], query: dict[str, Any]) -> bool:
     query (the caller doesn't care) and matches.
 
     `features` is a list; the query's features must be a subset of stored's.
+
+    `arch` uses universal-arch compatibility on darwin — see
+    `_arches_compatible`.
     """
     for key, qval in query.items():
         if not qval:
@@ -79,6 +109,9 @@ def platform_matches(stored: dict[str, Any], query: dict[str, Any]) -> bool:
             continue
         if key == "features":
             if not set(qval).issubset(set(sval)):
+                return False
+        elif key == "arch":
+            if not _arches_compatible(stored.get("os", ""), sval, qval):
                 return False
         elif sval != qval:
             return False
@@ -90,6 +123,9 @@ def platform_matches(stored: dict[str, Any], query: dict[str, Any]) -> bool:
             continue
         if key == "features":
             if not set(qval).issubset(set(sval)):
+                return False
+        elif key == "arch":
+            if not _arches_compatible(stored.get("os", ""), sval, qval):
                 return False
         elif sval != qval:
             return False
