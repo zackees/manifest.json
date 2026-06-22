@@ -1,4 +1,5 @@
 {
+  "$schema": "https://zackees.github.io/manifest.json/v1/manifest.schema.json",
   "kind": "Release",
   "schema_version": 1,
   "tool": "exotic-tool",
@@ -15,9 +16,15 @@
     "archive_size_bytes": 145000,
     "build_command": "make install PREFIX=/usr/local",
     "supported_platforms": [
-      { "os": "linux" },
-      { "os": "darwin" },
-      { "os": "freebsd" }
+      {
+        "os": "linux"
+      },
+      {
+        "os": "darwin"
+      },
+      {
+        "os": "freebsd"
+      }
     ],
     "signatures": [
       {

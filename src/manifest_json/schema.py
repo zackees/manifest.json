@@ -51,9 +51,30 @@ def _field_schema(field: FieldDescriptor) -> dict[str, Any]:
     return dict(_SCALAR_MAP[field.type])
 
 
+def _to_camel(snake: str) -> str:
+    """Match protobuf's default json_name auto-camelCase conversion."""
+    parts = snake.split("_")
+    return parts[0] + "".join(p.title() for p in parts[1:])
+
+
+def _json_name(field: FieldDescriptor) -> str:
+    """Return the JSON property name for a proto field.
+
+    Default: keep the proto snake_case name (matches our wire convention).
+    Override: if the field has an EXPLICIT `[json_name = "..."]` annotation
+    that differs from protobuf's auto-generated camelCase, honor it. That's
+    how a proto field literally named `schema` becomes `$schema` on the wire.
+    """
+    auto_camel = _to_camel(field.name)
+    if field.json_name and field.json_name != auto_camel:
+        return field.json_name
+    return field.name
+
+
 def _message_schema(msg: Descriptor) -> dict[str, Any]:
     properties: dict[str, Any] = {}
     for field in msg.fields:
+        name = _json_name(field)
         # map<K,V> case (repeated message with map_entry=True) is handled
         # inside _field_schema and must NOT also be wrapped in an array.
         if (
@@ -61,15 +82,15 @@ def _message_schema(msg: Descriptor) -> dict[str, Any]:
             and field.type == FieldDescriptor.TYPE_MESSAGE
             and field.message_type.GetOptions().map_entry
         ):
-            properties[field.name] = _field_schema(field)
+            properties[name] = _field_schema(field)
             continue
         if field.is_repeated:
-            properties[field.name] = {
+            properties[name] = {
                 "type": "array",
                 "items": _field_schema(field),
             }
         else:
-            properties[field.name] = _field_schema(field)
+            properties[name] = _field_schema(field)
     return {
         "type": "object",
         "properties": properties,

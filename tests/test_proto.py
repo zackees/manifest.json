@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from google.protobuf.descriptor import FieldDescriptor
+
 from manifest_json.proto import manifest_pb2
 
 
@@ -38,7 +40,21 @@ def test_catalog_field_numbers_stable() -> None:
         "online_url": 4,
         "channels": 5,
         "releases": 6,
+        "schema": 7,
     }
+
+
+def test_root_documents_carry_schema_field_with_dollar_json_name() -> None:
+    """All five root document types expose an optional `schema` field
+    that projects to `$schema` on the JSON wire."""
+    for msg_name in ("Index", "Catalog", "Release", "EmbeddedSlice", "ArchiveContents"):
+        msg = manifest_pb2.DESCRIPTOR.message_types_by_name[msg_name]
+        field = msg.fields_by_name.get("schema")
+        assert field is not None, f"{msg_name} missing `schema` field"
+        assert field.type == FieldDescriptor.TYPE_STRING
+        assert field.json_name == "$schema", (
+            f"{msg_name}.schema json_name = {field.json_name!r}, want '$schema'"
+        )
 
 
 def test_platform_field_numbers_stable() -> None:

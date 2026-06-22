@@ -1,4 +1,5 @@
 {
+  "$schema": "https://zackees.github.io/manifest.json/v1/manifest.schema.json",
   "kind": "Release",
   "schema_version": 1,
   "tool": "soldr",
@@ -17,13 +18,19 @@
   },
   "platforms": [
     {
-      "platform": { "os": "linux", "arch": "x86_64", "libc": "glibc" },
+      "platform": {
+        "os": "linux",
+        "arch": "x86_64",
+        "libc": "glibc"
+      },
       "asset": {
         "filename": "soldr-1.4.2-linux-x86_64.tar.zst",
         "media_type": "application/zstd",
         "size_bytes": 14223101,
         "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "urls": ["https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-linux-x86_64.tar.zst"],
+        "urls": [
+          "https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-linux-x86_64.tar.zst"
+        ],
         "signatures": [
           {
             "type": "cosign",
@@ -35,31 +42,49 @@
       }
     },
     {
-      "platform": { "os": "linux", "arch": "x86_64", "libc": "musl" },
+      "platform": {
+        "os": "linux",
+        "arch": "x86_64",
+        "libc": "musl"
+      },
       "asset": {
         "filename": "soldr-1.4.2-linux-x86_64-musl.tar.zst",
         "size_bytes": 13884221,
         "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        "urls": ["https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-linux-x86_64-musl.tar.zst"]
+        "urls": [
+          "https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-linux-x86_64-musl.tar.zst"
+        ]
       }
     },
     {
-      "platform": { "os": "darwin", "arch": "aarch64", "os_version": "11.0" },
+      "platform": {
+        "os": "darwin",
+        "arch": "aarch64",
+        "os_version": "11.0"
+      },
       "asset": {
         "filename": "soldr-1.4.2-darwin-aarch64.tar.zst",
         "size_bytes": 15102003,
         "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-        "urls": ["https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-darwin-aarch64.tar.zst"]
+        "urls": [
+          "https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-darwin-aarch64.tar.zst"
+        ]
       }
     },
     {
-      "platform": { "os": "windows", "arch": "x86_64", "abi": "msvc" },
+      "platform": {
+        "os": "windows",
+        "arch": "x86_64",
+        "abi": "msvc"
+      },
       "asset": {
         "filename": "soldr-1.4.2-windows-x86_64.zip",
         "media_type": "application/zip",
         "size_bytes": 16441002,
         "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-        "urls": ["https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-windows-x86_64.zip"]
+        "urls": [
+          "https://github.com/zackees/soldr/releases/download/v1.4.2/soldr-1.4.2-windows-x86_64.zip"
+        ]
       }
     }
   ]

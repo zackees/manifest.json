@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>manifest.json — codified asset-download manifest format</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+           max-width: 880px; margin: 2.5rem auto; padding: 0 1rem;
+           color: #1a1a1a; line-height: 1.55; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    .lede { color: #555; margin-top: 0; margin-bottom: 2rem; }
+    code, pre { font-family: SF Mono, Menlo, Consolas, monospace; font-size: 0.92rem; }
+    pre { background: #f5f5f7; padding: 0.85rem; border-radius: 6px; overflow-x: auto; }
+    a { color: #0366d6; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0 2rem; }
+    th, td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid #eee; vertical-align: top; }
+    th { background: #fafafa; font-weight: 600; }
+    footer { color: #888; font-size: 0.85rem; margin-top: 3rem;
+             border-top: 1px solid #eee; padding-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>manifest.json</h1>
+  <p class="lede">
+    A codified, proto-defined JSON format for describing downloadable artifacts —
+    asset name, platform tuple, optional sha, download URL, and links to other manifests.
+    One schema serves humans reading the JSON, tools consuming it, and binaries
+    that embed a compiled per-target slice.
+  </p>
+
+  <h2>Versioned schemas</h2>
+  <table>
+    <thead><tr><th>Version</th><th>JSON Schema</th><th>Protobuf source</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>v1</code></td>
+        <td><a href="v1/manifest.schema.json"><code>v1/manifest.schema.json</code></a></td>
+        <td><a href="v1/manifest.proto"><code>v1/manifest.proto</code></a></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Pin your <code>$schema</code> to the versioned URL above &mdash; not the
+     repo HEAD &mdash; so your documents stay valid forever as the spec evolves.</p>
+
+  <h2>Use it in a manifest</h2>
+  <pre><code>{
+  "$schema": "https://zackees.github.io/manifest.json/v1/manifest.schema.json",
+  "kind": "Catalog",
+  "schema_version": 1,
+  "tool": "clang",
+  ...
+}</code></pre>
+  <p>VS Code (and other JSON-aware editors) auto-validate on save when
+     <code>$schema</code> is set.</p>
+
+  <h2>Validate locally</h2>
+  <pre><code>pip install git+https://github.com/zackees/manifest.json
+manifest-validate path/to/manifest.json</code></pre>
+
+  <h2>Source</h2>
+  <p><a href="https://github.com/zackees/manifest.json">github.com/zackees/manifest.json</a> &mdash;
+     <a href="https://github.com/zackees/manifest.json/blob/main/README.md">README</a> &mdash;
+     <a href="https://github.com/zackees/manifest.json/blob/main/DESIGN.md">DESIGN</a></p>
+
+  <h2>Real-world consumers</h2>
+  <ul>
+    <li><a href="https://zackees.github.io/soldr-toolchain/">soldr-toolchain</a>
+        &mdash; catalogue of third-party tool releases consumed by
+        <a href="https://github.com/zackees/soldr">zackees/soldr</a> CI.</li>
+  </ul>
+
+  <footer>
+    Generated from <a href="https://github.com/zackees/manifest.json/blob/main/manifest.proto">manifest.proto</a>.
+  </footer>
+</body>
+</html>

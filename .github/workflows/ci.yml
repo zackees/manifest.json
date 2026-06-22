@@ -27,6 +27,9 @@ jobs:
       - name: Generate JSON Schema
         run: python ci/gen_schema.py
 
+      - name: Sync v1/ snapshot
+        run: python ci/sync_v1.py
+
       - name: Check no drift in committed generated files
         run: python ci/check_drift.py
 

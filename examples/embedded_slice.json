@@ -1,9 +1,14 @@
 {
+  "$schema": "https://zackees.github.io/manifest.json/v1/manifest.schema.json",
   "kind": "EmbeddedSlice",
   "schema_version": 1,
   "tool": "clang",
   "compiled_for": {
-    "platform": { "os": "linux", "arch": "x86_64", "libc": "glibc" },
+    "platform": {
+      "os": "linux",
+      "arch": "x86_64",
+      "libc": "glibc"
+    },
     "channel": "latest-stable"
   },
   "compiled_version": "21.1.5",

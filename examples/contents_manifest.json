@@ -1,19 +1,84 @@
 {
+  "$schema": "https://zackees.github.io/manifest.json/v1/manifest.schema.json",
   "kind": "ArchiveContents",
   "schema_version": 1,
   "asset_sha256": "4021cc49d70472122761709e7376835dfc857b5ec77183fa969b5f61d0f13a2f",
   "file_count": 11,
   "files": [
-    { "path": "bin",                 "type": "dir",      "size": 0,         "mode": 493 },
-    { "path": "bin/clang",           "type": "file",     "size": 220980872, "mode": 493, "sha256": "1111111111111111111111111111111111111111111111111111111111111111" },
-    { "path": "bin/clang++",         "type": "hardlink", "size": 0,         "mode": 493, "linkname": "bin/clang" },
-    { "path": "bin/clang-cl",        "type": "hardlink", "size": 0,         "mode": 493, "linkname": "bin/clang" },
-    { "path": "bin/clang-cpp",       "type": "hardlink", "size": 0,         "mode": 493, "linkname": "bin/clang" },
-    { "path": "bin/clang-format",    "type": "file",     "size":   8800000, "mode": 493, "sha256": "2222222222222222222222222222222222222222222222222222222222222222" },
-    { "path": "bin/clang-tidy",      "type": "file",     "size":  92500000, "mode": 493, "sha256": "3333333333333333333333333333333333333333333333333333333333333333" },
-    { "path": "bin/lld",             "type": "file",     "size":  78400000, "mode": 493, "sha256": "4444444444444444444444444444444444444444444444444444444444444444" },
-    { "path": "bin/lld-link",        "type": "symlink",  "size": 0,         "mode": 511, "linkname": "lld" },
-    { "path": "lib",                 "type": "dir",      "size": 0,         "mode": 493 },
-    { "path": "lib/libclang.so",     "type": "file",     "size":  62100000, "mode": 420, "sha256": "5555555555555555555555555555555555555555555555555555555555555555" }
+    {
+      "path": "bin",
+      "type": "dir",
+      "size": 0,
+      "mode": 493
+    },
+    {
+      "path": "bin/clang",
+      "type": "file",
+      "size": 220980872,
+      "mode": 493,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    {
+      "path": "bin/clang++",
+      "type": "hardlink",
+      "size": 0,
+      "mode": 493,
+      "linkname": "bin/clang"
+    },
+    {
+      "path": "bin/clang-cl",
+      "type": "hardlink",
+      "size": 0,
+      "mode": 493,
+      "linkname": "bin/clang"
+    },
+    {
+      "path": "bin/clang-cpp",
+      "type": "hardlink",
+      "size": 0,
+      "mode": 493,
+      "linkname": "bin/clang"
+    },
+    {
+      "path": "bin/clang-format",
+      "type": "file",
+      "size": 8800000,
+      "mode": 493,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    {
+      "path": "bin/clang-tidy",
+      "type": "file",
+      "size": 92500000,
+      "mode": 493,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    {
+      "path": "bin/lld",
+      "type": "file",
+      "size": 78400000,
+      "mode": 493,
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+    },
+    {
+      "path": "bin/lld-link",
+      "type": "symlink",
+      "size": 0,
+      "mode": 511,
+      "linkname": "lld"
+    },
+    {
+      "path": "lib",
+      "type": "dir",
+      "size": 0,
+      "mode": 493
+    },
+    {
+      "path": "lib/libclang.so",
+      "type": "file",
+      "size": 62100000,
+      "mode": 420,
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+    }
   ]
 }

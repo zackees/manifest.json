@@ -11,6 +11,12 @@ import jsonschema
 from manifest_json.schema import generate_json_schema
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+# Recognized canonical pattern for $schema URLs:
+#   https://.../<owner>/manifest.json/v<N>/manifest.schema.json
+# Used only for the cross-check: if the URL embeds a version, it must
+# equal `schema_version`. Unknown URL shapes (mirrors, airgapped hosting)
+# are tolerated and skip the check.
+_SCHEMA_URL_VERSION_RE = re.compile(r"/v(\d+)/manifest\.schema\.json(?:[?#]|$)")
 
 
 class ValidationError(Exception):
@@ -177,10 +183,30 @@ def _validate_archive_contents_semantics(doc: dict[str, Any]) -> None:
         )
 
 
+def _validate_schema_url(doc: dict[str, Any]) -> None:
+    """If $schema is present AND the URL embeds a version per the
+    canonical pattern, it MUST match schema_version. URLs that don't
+    match the canonical pattern (mirrors, internal hosting) are tolerated
+    and skip the cross-check."""
+    url = doc.get("$schema", "")
+    if not url:
+        return
+    m = _SCHEMA_URL_VERSION_RE.search(url)
+    if not m:
+        return  # unknown URL shape — tolerated
+    url_version = int(m.group(1))
+    doc_version = doc.get("schema_version", 0)
+    if url_version != doc_version:
+        raise ValidationError(
+            f"$schema URL implies v{url_version} but schema_version={doc_version}"
+        )
+
+
 def validate_document(doc: dict[str, Any]) -> None:
     """Full structural + semantic validation. Raises ValidationError on any
     violation. Returns None on success."""
     _validate_against_schema(doc)
+    _validate_schema_url(doc)
     kind = doc.get("kind")
     if kind == "Catalog":
         validate_catalog_semantics(doc)
