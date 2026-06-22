@@ -21,3 +21,6 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# External-repo working trees (clones of other repos used during dev/testing)
+.extern-repos/
