@@ -510,6 +510,8 @@ This is the [soldr](https://github.com/zackees/soldr) pattern.
 `Asset.urls[]` can be relative or substitutable. Recommended convention:
 the first URL is canonical, additional URLs are mirrors. A bootstrap tool
 can rewrite all URLs through a single `base_url` for an internal mirror.
+Only syntactically safe relative paths are valid; resolving them requires an
+explicit trusted base origin. Absolute production URLs are HTTPS.
 
 ### 6.5 Binary-embedded
 
@@ -540,6 +542,22 @@ Single asset spanning multiple files (e.g. >2 GB or LFS-quota constrained):
 Reconstruction is byte concatenation in `number` order. The top-level
 `sha256` is over the reconstructed whole; part `sha256` values let the
 downloader verify each part independently and resume.
+
+`urls` and `parts` are an exclusive transport union: exactly one must be
+non-empty. Parts are ordered, contiguous, and 1-based; each has a positive
+size, lowercase SHA-256, and one or more unique mirrors. The sum of part
+sizes must exactly equal the positive top-level size. Validators and reference
+clients cap an asset at 4,096 parts, 8 TiB, 8,192 UTF-8 bytes per URL, and
+checked unsigned-64-bit arithmetic. The full Asset SHA-256 is the logical and
+cache identity, so a different valid partition layout remains transparent.
+
+Multipart is client capability level 2. A Release containing any multipart
+platform or component Asset must declare `min_client_version >= 2`; consumers
+whose supported capability is lower must reject or skip it. Callers always use
+`materialize(asset)`, never `asset.urls[0]`: it verifies each selected part,
+concatenates in number order, verifies the full hash, and atomically replaces
+the destination. Mirrors are retried for availability failures only; a pinned
+part checksum mismatch is fatal.
 
 ---
 

@@ -6,7 +6,7 @@
   "version": "21.1.5",
   "published_at": "2026-05-12T00:00:00Z",
   "urgency": "low",
-  "min_client_version": 1,
+  "min_client_version": 2,
   "platforms": [
     {
       "platform": {
@@ -29,7 +29,7 @@
             "sha256": "aaaa111111111111111111111111111111111111111111111111111111111111",
             "size_bytes": 1500000000,
             "urls": [
-              "https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang-extra/linux/x86_64/clang-extra-21.1.5-linux-x86_64-full.tar.zst.part01"
+              "https://fixtures.example.invalid/clang-extra/part01"
             ]
           },
           {
@@ -37,7 +37,7 @@
             "sha256": "bbbb222222222222222222222222222222222222222222222222222222222222",
             "size_bytes": 1500000000,
             "urls": [
-              "https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang-extra/linux/x86_64/clang-extra-21.1.5-linux-x86_64-full.tar.zst.part02"
+              "https://fixtures.example.invalid/clang-extra/part02"
             ]
           },
           {
@@ -45,7 +45,7 @@
             "sha256": "cccc333333333333333333333333333333333333333333333333333333333333",
             "size_bytes": 1500000000,
             "urls": [
-              "https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang-extra/linux/x86_64/clang-extra-21.1.5-linux-x86_64-full.tar.zst.part03"
+              "https://fixtures.example.invalid/clang-extra/part03"
             ]
           }
         ]
@@ -66,7 +66,7 @@
         "size_bytes": 12000000,
         "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
         "urls": [
-          "https://media.githubusercontent.com/media/zackees/clang-tool-chain-bins/main/assets/clang-extra/linux/x86_64/clang-extra-21.1.5-headers.tar.zst"
+          "https://fixtures.example.invalid/clang-extra/headers"
         ]
       }
     }
