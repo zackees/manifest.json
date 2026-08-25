@@ -24,3 +24,6 @@ Thumbs.db
 
 # External-repo working trees (clones of other repos used during dev/testing)
 .extern-repos/
+
+# Runnable Rust reference example build output.
+reference/rust-materializer/target/

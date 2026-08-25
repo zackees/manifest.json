@@ -219,6 +219,8 @@ full correctness use option 1 or 2.
 | Required top-level fields (`schema_version`, `tool`, ...) | ❌ | ✅ |
 | `channels[name]` resolves to a real release `version` | ❌ | ✅ |
 | `sha256` is 64-char lowercase hex | ❌ | ✅ |
+| Asset transport is exactly one of direct `urls[]` or multipart `parts[]` | ❌ | ✅ |
+| Multipart ordering, part hashes/sizes, mirrors, limits, and total size | ❌ | ✅ |
 | No duplicate `(platform, variant)` in a Release | ❌ | ✅ |
 | `releases[]` sorted newest-first | ❌ | ✅ |
 | `Source` declares `(repo_url + ref)` OR `archive_url` | ❌ | ✅ |
@@ -273,16 +275,24 @@ asset = resolve_in_catalog(
               "libc": "musl"},
     channel="latest-stable",
 )
-print(asset["urls"][0])     # the download URL
-print(asset["sha256"])      # for integrity check after download
+await materialize(asset, destination)  # one verified file, direct or multipart
 ```
+
+See [`examples/materialize_httpx.py`](examples/materialize_httpx.py) for a
+compact async `httpx` reference. It validates the union before I/O, limits
+redirects to five, treats checksum mismatches as fatal, verifies the full
+logical hash, and installs with atomic replacement.
+
+The equivalent transport-injected Tokio reference is a runnable crate at
+[`reference/rust-materializer`](reference/rust-materializer), intentionally
+outside `examples/` so example discovery only sees JSON examples.
 
 **List every match for an ambiguous query (JSON Lines for shell pipelines):**
 
 ```bash
 manifest-resolve catalog.json \
   --tool exotic --platform os=linux,arch=x86 --channel latest-stable --all \
-  | jq -r '.urls[0]'
+  # Pipe its Asset JSON into a transport-polymorphic materializer.
 ```
 
 **Compile a slice for embedding in a Rust binary:**
@@ -340,7 +350,7 @@ these alongside the `manifest-json` package:
 | GitHub Release artifact index | Attach a `Release` JSON to the release |
 | Git-LFS-hosted tree | Hierarchical `Index → Catalog → Release` under `assets/<tool>/...` |
 | Orphan `manifest` branch CDN | Tree on a long-lived branch served via `raw.githubusercontent.com` |
-| Mirror / failover | `urls[]` array on every asset |
+| Mirror / failover | `urls[]` array on each direct asset or each multipart part |
 | Self-hosted / airgapped | URLs are relative or `base_url`-substitutable |
 | Multi-version manager | `channels` map + full `releases[]` enumeration |
 | Binary-embedded resolver | `EmbeddedSlice` produced by `compile-for-target` |
