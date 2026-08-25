@@ -98,6 +98,10 @@ async def materialize(asset, destination: Path, cache_dir: Path, client=None, *,
                 if not _verified(assembled,asset["size_bytes"],asset["sha256"]): raise MaterializeError("full asset checksum or size mismatch")
                 os.replace(assembled,full)
         fd,name=tempfile.mkstemp(dir=destination.parent,prefix=destination.name+".",suffix=".tmp"); os.close(fd)
-        install=Path(name); shutil.copyfile(full,install); os.replace(install,destination); return destination
+        install=Path(name)
+        try:
+            shutil.copyfile(full,install); os.replace(install,destination); return destination
+        finally:
+            install.unlink(missing_ok=True)
     finally:
         if owned: await client.aclose()

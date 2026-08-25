@@ -321,29 +321,37 @@ async fn atomic_replace(from: &Path, to: &Path) -> R<()> {
     #[cfg(windows)]
     {
         use std::os::windows::ffi::OsStrExt;
-        use windows_sys::Win32::Storage::FileSystem::ReplaceFileW;
-        if !to.exists() {
-            tokio::fs::rename(from, to).await?;
-            return Ok(());
-        }
+        use windows_sys::Win32::Storage::FileSystem::{
+            MoveFileExW, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
+        };
         let mut src: Vec<u16> = from.as_os_str().encode_wide().chain(Some(0)).collect();
         let mut dst: Vec<u16> = to.as_os_str().encode_wide().chain(Some(0)).collect();
-        // ReplaceFileW swaps an existing destination atomically: unlike a
-        // delete+rename sequence there is never an observable missing target.
-        let ok = unsafe {
-            ReplaceFileW(
-                dst.as_mut_ptr(),
-                src.as_mut_ptr(),
-                std::ptr::null(),
-                0,
-                std::ptr::null(),
-                std::ptr::null(),
-            )
-        };
-        if ok == 0 {
-            return Err(Error::Io(std::io::Error::last_os_error()));
+        // SAFETY: both buffers are mutable, NUL-terminated UTF-16 paths and
+        // remain alive for the duration of the call. REPLACE_EXISTING handles
+        // both absent and concurrently-created destinations in one operation.
+        for attempt in 0..20 {
+            let ok = unsafe {
+                MoveFileExW(
+                    src.as_mut_ptr(),
+                    dst.as_mut_ptr(),
+                    MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH,
+                )
+            };
+            if ok != 0 {
+                return Ok(());
+            }
+            let error = std::io::Error::last_os_error();
+            if attempt == 19 || !matches!(error.raw_os_error(), Some(5 | 32)) {
+                return Err(Error::Io(error));
+            }
+            // Another verified-cache reader/writer can briefly hold the path
+            // without delete sharing. Retry the same atomic primitive; never
+            // delete the destination or expose a missing-file window.
+            tokio::time::sleep(std::time::Duration::from_millis(2)).await;
         }
-        Ok(())
+        Err(Error::Io(std::io::Error::other(
+            "atomic replacement retry exhausted",
+        )))
     }
 }
 #[cfg(test)]

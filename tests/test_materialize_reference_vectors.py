@@ -90,3 +90,17 @@ def test_cancellation_cleans_temporary_materialization_and_keeps_final(tmp_path)
         assert out.read_bytes()==b"old" and not list((tmp_path/"cache").glob("materialize-*"))
         await c.aclose()
     asyncio.run(run())
+
+def test_install_failure_removes_destination_temporary(tmp_path, monkeypatch):
+    async def run():
+        v=V["trusted-relative"]; calls=[]; c=client_for(v,calls); out=tmp_path/"out"
+        real_copy=reference.shutil.copyfile
+        def fail_install(source, destination):
+            if Path(destination).parent == out.parent and Path(destination).name.startswith(out.name+"."):
+                Path(destination).write_bytes(b"partial"); raise OSError("install failed")
+            return real_copy(source,destination)
+        monkeypatch.setattr(reference.shutil,"copyfile",fail_install)
+        with pytest.raises(OSError,match="install failed"):
+            await reference.materialize(v["asset"],out,tmp_path/"cache",c,base_url=v["base_url"])
+        assert not out.exists() and not list(tmp_path.glob(out.name+".*.tmp")); await c.aclose()
+    asyncio.run(run())
